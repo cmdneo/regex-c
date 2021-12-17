@@ -14,17 +14,14 @@ void test(int expr)
 		printf("%3zu. FAIL\n", counter);
 }
 
-strbuf readline()
-{
-	return strbuf_create_from_file(stdin, '\n');
-}
-
 int main()
 {
+	printf("--------------------TESTING--------------------\n");
+
 	str s = cstr("hello test 1 ok test next 2 ok not now 3 ok end");
 	str c1 = cstr("matches");
 	str c2 = cstr("matches");
-	str c3 = cstr("does not matches");
+	str c3 = cstr("does not match");
 	str f = cstr("ok");
 
 	test(f.size == 2);
@@ -39,6 +36,7 @@ int main()
 	test(popped.size == 5 && split_me.size == 9 && popped.data == split_me.data - 8);
 
 	strbuf tbc = strbuf_create_from_str(f);
+	strbuf to_be_sliced = strbuf_create_from_str(c3);
 
 	strbuf_append(&tbc, c1);
 	test(str_cmp(strbuf_to_str(&tbc), cstr("okmatches")) == 0);
@@ -49,7 +47,18 @@ int main()
 	strbuf_insert(&tbc, f, 7);
 	test(str_cmp(strbuf_to_str(&tbc), cstr("matchesokokmatches")) == 0);
 
+	str slice = strbuf_substr(&to_be_sliced, 5, 8);
+	str illegal_slice = str_substr(c3, 1000, 2);
+	test(illegal_slice.size == 0 && illegal_slice.data == 0);
+	test(str_cmp(slice, cstr("not")) == 0);
+	illegal_slice = strbuf_substr(&to_be_sliced, -3, 2);
+	test(illegal_slice.size == 0 && illegal_slice.data == 0);
+
+
 	strbuf_destroy(&tbc);
+	strbuf_destroy(&to_be_sliced);
+
+	printf("----------------------END--------------------\n");
 
 	return EXIT_SUCCESS;
 }

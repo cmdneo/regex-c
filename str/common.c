@@ -2,7 +2,13 @@
 
 #include "str/str.h"
 
-void strlib_show_error_impl(int error) {
+int strlib_is_valid_range(isize_t size, isize_t start, isize_t end)
+{
+	return !(start > end || end > size || start < 0);
+}
+
+void strlib_show_error_impl(int error)
+{
 	str err_str;
 
 	switch (error) {
@@ -21,6 +27,7 @@ void strlib_show_error_impl(int error) {
 	str_print(err_str);
 }
 
-void strlib_print_char(char c) {
+void strlib_print_char(char c)
+{
 	putchar(c);
 }

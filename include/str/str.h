@@ -32,6 +32,7 @@ typedef struct strbuf {
 /* -- Functions -- */
 /* Common Functions */
 
+int strlib_is_valid_range(isize_t size, isize_t start, isize_t end);
 void strlib_show_error_impl(int error);
 void strlib_print_char(char c);
 
@@ -51,6 +52,7 @@ strbuf strbuf_create(isize_t capacity);
 strbuf strbuf_create_from_str(str s);
 strbuf strbuf_create_from_file(FILE *f, char end_marker);
 strbuf strbuf_create_copy(strbuf const *s);
+str strbuf_substr(strbuf const *s, isize_t start, isize_t end);
 str strbuf_to_str(strbuf const *s);
 void strbuf_resize(strbuf *s, isize_t new_capacity);
 void strbuf_destroy(strbuf *s);
@@ -66,6 +68,11 @@ void strbuf_print(strbuf const *s);
 
 /* -- Macros -- */
 
-#define show_error(s) strlib_show_error_impl(s.error)
+#define PRI_isize_t "lli"
+#define show_error(s) strlib_show_error_impl(_Generic((s), \
+strbuf: (s).error,\
+strbuf*: (*s).error,\
+strbuf const*: (*s).error,\
+))
 
 #endif /* END str/str.h */

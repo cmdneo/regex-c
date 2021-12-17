@@ -62,6 +62,14 @@ strbuf strbuf_create_copy(strbuf const *s)
 	return ret;
 }
 
+str strbuf_substr(strbuf const *s, isize_t start, isize_t end)
+{
+	if (!strlib_is_valid_range(s->size, start, end))
+		return (str){ 0 };
+
+	return (str){ .size = end - start, .data = s->data + start };
+}
+
 str strbuf_to_str(strbuf const *s)
 {
 	return (str){ .data = s->data, .size = s->size };
@@ -118,7 +126,7 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 	if (s->error)
 		return;
 
-	if (start > end || end > s->size || start < 0) {
+	if (!strlib_is_valid_range(s->size, start, end)) {
 		s->error = STRLIB_INVALID_INDEX;
 		return;
 	}

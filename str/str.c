@@ -10,7 +10,7 @@ str cstr(char const *s)
 
 str str_substr(str s, isize_t start, isize_t end)
 {
-	if (end > s.size || start < 0 || start > end)
+	if (!strlib_is_valid_range(s.size, start, end))
 		return (str){0};
 
 	return (str){
