@@ -11,7 +11,7 @@ str cstr(char const *s)
 str str_substr(str s, isize_t start, isize_t end)
 {
 	if (!strlib_is_valid_range(s.size, start, end))
-		return (str){0};
+		return (str){ 0 };
 
 	return (str){
 		.size = end - start,

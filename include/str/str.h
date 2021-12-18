@@ -4,7 +4,7 @@
 /* For FILE type */
 #include <stdio.h>
 
-/* -- Data and Config -- */
+/* -- Config -- */
 
 enum { MEMORY_SCALE_FACTOR = 2 };
 
@@ -69,10 +69,24 @@ void strbuf_print(strbuf const *s);
 /* -- Macros -- */
 
 #define PRI_isize_t "lli"
-#define show_error(s) strlib_show_error_impl(_Generic((s), \
+#define show_error(s)                                                                              \
+	strlib_show_error_impl(_Generic((s), \
 strbuf: (s).error,\
 strbuf*: (*s).error,\
 strbuf const*: (*s).error,\
+strbuf const* const: (*s).error,\
 ))
+
+/* -- Constants -- */
+
+static const str STR_DIGITS = { 10, "0123456789" };
+static const str STR_LOWERCASE = { 26, "abcdefghijklmnopqrstuvwxyz" };
+static const str STR_UPPERCASE = { 26, "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
+static const str STR_LETTERS = { 52, "abcdefghijklmnopqrstuvwxyz"
+				     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
+static str const STR_WHITESPACES = { 6, " \t\r\n\f\v" };
+static const str STR_ALNUM = { 62, "0123456789"
+				   "abcdefghijklmnopqrstuvwxyz"
+				   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
 
 #endif /* END str/str.h */
