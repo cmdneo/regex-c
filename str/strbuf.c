@@ -27,9 +27,11 @@ strbuf strbuf_create_from_str(str s)
 
 strbuf strbuf_create_from_file(FILE *f, char end_marker)
 {
-	strbuf s = { 0 };
-	int c;
+	strbuf s = strbuf_create(8);
+	if (s.error)
+		return s;
 
+	int c;
 	for (isize_t size = 1; (c = fgetc(f)) != EOF && c != end_marker; size++) {
 		if (s.capacity >= size) {
 			s.data[size - 1] = c;
@@ -73,6 +75,18 @@ str strbuf_substr(strbuf const *s, isize_t start, isize_t end)
 str strbuf_to_str(strbuf const *s)
 {
 	return (str){ .data = s->data, .size = s->size };
+}
+
+isize_t strbuf_find_first(strbuf const *s, str substr) {
+	return str_find_first(strbuf_to_str(s), substr);
+}
+
+isize_t strbuf_find_last(strbuf const *s, str substr) {
+	return str_find_last(strbuf_to_str(s), substr);
+}
+
+bool strbuf_contains(strbuf const *s, str substr) {
+	return str_contains(strbuf_to_str(s), substr);
 }
 
 void strbuf_resize(strbuf *s, isize_t new_capacity)
@@ -125,7 +139,6 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 {
 	if (s->error)
 		return;
-
 	if (!strlib_is_valid_range(s->size, start, end)) {
 		s->error = STRLIB_INVALID_INDEX;
 		return;
@@ -133,7 +146,7 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 
 	isize_t substr_size = end - start;
 	isize_t new_size = s->size - substr_size;
-
+	/* Shift string segment to the left by size of the removes substring */
 	for (isize_t i = start; i < new_size; i++)
 		s->data[i] = s->data[i + substr_size];
 
@@ -145,11 +158,11 @@ void strbuf_replace(strbuf *s, str old, str new)
 	if (s->error)
 		return;
 
-	isize_t substr_start = str_find_first(strbuf_to_str(s), old);
+	isize_t substr_start = strbuf_find_first(s, old);
 	while (substr_start >= 0) {
 		strbuf_remove(s, substr_start, substr_start + old.size);
 		strbuf_insert(s, new, substr_start);
-		substr_start = str_find_first(strbuf_to_str(s), old);
+		substr_start = strbuf_find_first(s, old);
 	}
 }
 

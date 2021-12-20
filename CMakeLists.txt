@@ -11,8 +11,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "lib")
 
 include_directories("include")
-add_library(str str/str.c str/strbuf.c str/common.c)
+add_library(str str/str.c str/strbuf.c str/common.c str/fmt.c)
+add_library(re re/re.c)
+add_library(regex INTERFACE)
+target_link_libraries(regex INTERFACE re str)
 
 # Testing, TODO Use a more standard testing(unit testing)
 add_executable(test_main tests/test-str.c)
-target_link_libraries(test_main str)
+target_link_libraries(test_main regex)

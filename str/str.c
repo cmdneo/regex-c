@@ -62,6 +62,10 @@ isize_t str_find_last(str s, str substr)
 	return -substr.size;
 }
 
+bool str_contains(str s, str substr) {
+	return str_find_first(s, substr) >= 0;
+}
+
 str str_pop_first_split(str *s, str split_by)
 {
 	isize_t first_at = str_find_first(*s, split_by);
