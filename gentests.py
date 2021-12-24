@@ -9,20 +9,23 @@ Test-data(.tdata) file format:
 => <TEST NAME>
 # Single line only Comments ignored by parser
 <%
-# Strings starting with $<arg-name> are replaced by respective values from arg
-# list Insert test code here, it also provides 10 tmp variables
-# Use tmp vars like $tmp0 $tmp1, they are replaced by random names to prevent
-# Collision with with other tmp vars in the same submodule/module
-# After testing is done assign the truth value of the test to result(type:int) var
+# Insert test code TEMPLATE here
+# Strings starting with $<arg-name> are replaced by respective values from
+# arg-list. It also provides 10 tmp variables (tmp0-tmp9)
+# Use temp vars like $tmpN, they are replaced by random names to prevent
+# collision with with other tmp vars in the same submodule/module
+# After testing is done assign the truth value of the test
+# the variable result(type: int). Like:
+result = str_cmp($s1, $expected);
 %>
 # Arg list (start with a colon :)
-:<arg1-name>  <arg2-name> ..... expected
+:<arg1-name>  <arg2-name> ..... <argn-name>
 # Supported argument types are following C literals:
 # int(dec, oct & hex) [with signs]
 # float(dec and hex)  [with signs]
 # char and char* (that is string)
-<arg1-value>  <arg2-value> .... <comparison-value>
-<arg1-value>  <arg2-value> .... <comparison-value>
+<arg1-value>  <arg2-value> .... <argn-value>
+<arg1-value>  <arg2-value> .... <argn-value>
       .           .                    .
 	  .           .                    .
 	  .           .                    . 
@@ -30,11 +33,12 @@ Test-data(.tdata) file format:
 test-data file Example:
 => STRBUF_APPEND
 <%
-strbuf $tmp0 = cstr($s);
-strbuf_append(&$tmp0, cstr($append_this));
-result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
+	strbuf_append(&$tmp0, cstr($append_this));
+	result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf_destroy(&$tmp0);
 %>
-# Last arg should always be named expected
+# Args name list
 :s         append_this     expected
 "hello, "     "world"      "hello, world"
 "123"         "456"         "123456"
@@ -56,6 +60,7 @@ options:
 """
 
 import argparse
+import datetime
 import pathlib
 import re
 import string
@@ -94,8 +99,12 @@ C_LITERAL_REGEX = re.compile("|".join([f"(?P<{cname}>{regex})"
 
 # C Code templates for code generation
 # Main template
-# NEEDS: MODULE_CODE, MODULE_NAME, INCLUDE_STATEMENTS
+# NEEDS: MODULE_CODE, MODULE_NAME, INCLUDE_STATEMENTS, GENERATION_TIME
 C_MODULE_TMPL = string.Template(R"""
+/* Machine generated file, *Do not edit*
+ * Generation time: $GENERATION_TIME
+ * Generated from : $MODULE_NAME 
+ */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -183,11 +192,9 @@ $SINGLE_TEST_CODE
 class Test:
 	name: str
 	code: str
+	nargs: int
 	arg_names: list[str]
 	argvals: list[list[str]]
-	expected_vals: list[str]
-	nargs: int
-	expected_var = "expected"
 
 def parse_args(line):
 	args = []
@@ -213,7 +220,7 @@ def parse_tdf(lines: list[str], fpath):
 		if line.startswith(TEST_START_TAG):
 			active_test = Test(
 				line.lstrip(TEST_START_TAG).strip(),
-				"", [], [], [], 0
+				"", 0, [], []
 			)
 			tests.append(active_test)
 		elif line.startswith(COMMENT_START_TAG) or line == "":
@@ -230,17 +237,14 @@ def parse_tdf(lines: list[str], fpath):
 		elif line.startswith(ARGS_START_TAG):
 			arg_line = line
 			args = line[1:].split()
-			if args[-1].lower() != "expected":
-				args.append("expected")
-			# Get args from 0..last-1 as last one is the expected(non-fn-arg)
-			active_test.arg_names = list(map(lambda s: s.strip(), args[:-1]))
-			active_test.nargs = len(args) - 1
+			active_test.arg_names = list(map(lambda s: s.strip(), args))
+			active_test.nargs = len(args)
 
 		# Extract argyment values
 		elif active_test and not inside_code_block:
 			argvals = parse_args(line)
 			# nargs + 1 as that row also includes expected value
-			if len(argvals) != active_test.nargs + 1:
+			if len(argvals) != active_test.nargs:
 				raise ValueError(f"""\
 Argument values list incosistent
 File: {fpath!r}: line {i + 1}:
@@ -248,8 +252,7 @@ File: {fpath!r}: line {i + 1}:
 While arg-names line is:
 {arg_line}
 """)
-			active_test.argvals.append(argvals[:-1])
-			active_test.expected_vals.append(argvals[-1])
+			active_test.argvals.append(argvals)
 
 	return tests	
 
@@ -257,16 +260,16 @@ While arg-names line is:
 # GENERATE FULL code from using templates for a module
 def gen_mod_code(test_mod: list[Test], include_stmts, mod_name):
 	module_code = ""
+	gen_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S (local)")
 
 	for test in test_mod:
 		tests_code = ""
-		for argval, exp_val in zip(test.argvals, test.expected_vals):
+		for argval in test.argvals:
 			# Generate tmp0-tmp9 variable names
 			tmp_var_ids = {f"tmp{x}": "tmp_" + secrets.token_hex(16) for x in range(10)}
 			# Make dict mapping from 
 			# string template variable names to their substitutions values
 			vals_map = {
-				test.expected_var: exp_val,
 				**dict(zip(test.arg_names, argval)),
 				**tmp_var_ids
 			}
@@ -285,7 +288,8 @@ def gen_mod_code(test_mod: list[Test], include_stmts, mod_name):
 	return C_MODULE_TMPL.substitute(
 		MODULE_CODE=module_code,
 		MODULE_NAME=mod_name,
-		INCLUDE_STATEMENTS=include_stmts
+		INCLUDE_STATEMENTS=include_stmts,
+		GENERATION_TIME=gen_time
 	)
 		
 		

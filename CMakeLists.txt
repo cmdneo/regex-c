@@ -18,9 +18,12 @@ add_library(re re/re.c)
 add_library(regex INTERFACE)
 target_link_libraries(regex INTERFACE re str)
 
+# Start testing
 enable_testing()
 set(TESTS_DIR "${CMAKE_SOURCE_DIR}/tests")
-set(CODEGEN_DIR "${CMAKE_SOURCE_DIR}/build/tests")
+set(CODEGEN_DIR "${CMAKE_BINARY_DIR}/tests")
+
+# Add test for str library
 add_custom_command(
         OUTPUT "${CODEGEN_DIR}/test-str.c"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
@@ -28,9 +31,9 @@ add_custom_command(
                 --tests "${TESTS_DIR}"
                 --codegen "${CODEGEN_DIR}"
                 -I "str/str.h"
-                -i "str/str.h.tdata"
+                -i "str.tdata"
                 -o "test-str.c"
-        DEPENDS "${TESTS_DIR}/str/str.h.tdata"
+        DEPENDS "${TESTS_DIR}/str.tdata"
 )
 add_executable(test-str "${CODEGEN_DIR}/test-str.c")
 target_link_libraries(test-str regex)
