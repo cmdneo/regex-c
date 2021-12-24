@@ -21,6 +21,7 @@ void strbuf_show_error_impl(int error)
 		break;
 
 	default:
+		err_str = cstr("OK, No errors.");
 		break;
 	}
 

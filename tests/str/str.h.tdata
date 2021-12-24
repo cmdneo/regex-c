@@ -1,10 +1,22 @@
-=> STRBUF REMOVE FUNCTION TEST
+=> STRBUF_REMOVE
 <%
-strbuf $tmp0 = strbuf_create_from_str(cstr($s));
-strbuf_remove($tmp0, $start, $end);
-bool $result = str_cmp(cstr($expected), strbuf_str($tmp1)) == 0;
-strbuf_destroy($s);
+	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
+	strbuf_remove(&$tmp0, $start, $end);
+	result = str_cmp(cstr($expected), strbuf_to_str(&$tmp0)) == 0;
+	strbuf_destroy(&$tmp0);
 %>
 :s         start end         expected
 "NexT"    1     3           "NT"
 "NexT"    1     4           "N"
+"DOnt remove" 1 1 "DOnt remove"
+
+=> STRBUF_APPEND
+<%
+	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
+	strbuf_append(&$tmp0, cstr($append_this));
+	result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:s         append_this     expected
+"hello, "     "world"      "hello, world"
+"123"         "456"         "123456"

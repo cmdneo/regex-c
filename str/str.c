@@ -62,7 +62,8 @@ isize_t str_find_last(str s, str substr)
 	return -substr.size;
 }
 
-bool str_contains(str s, str substr) {
+int str_contains(str s, str substr)
+{
 	return str_find_first(s, substr) >= 0;
 }
 

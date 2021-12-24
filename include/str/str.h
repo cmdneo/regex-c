@@ -3,7 +3,6 @@
 
 /* For FILE type */
 #include <stdio.h>
-#include <stdbool.h>
 
 /* -- Config -- */
 
@@ -11,7 +10,7 @@ enum { MEMORY_SCALE_FACTOR = 2, STRBUF_INIT_CAP = 8 };
 
 /* -- Errors -- */
 
-enum strlib_errors { STRLIB_INVALID_INDEX = 100, STRLIB_NO_MEM};
+enum strlib_errors { STRLIB_INVALID_INDEX = 100, STRLIB_NO_MEM };
 
 /* -- Data structures -- */
 
@@ -24,9 +23,9 @@ typedef struct str {
 } str;
 
 typedef struct strbuf {
+	char *data;
 	isize_t capacity;
 	isize_t size;
-	char *data;
 	int error;
 } strbuf;
 
@@ -44,7 +43,7 @@ str str_substr(str s, isize_t start, isize_t end);
 isize_t str_cmp(str s, str t);
 isize_t str_find_first(str s, str substr);
 isize_t str_find_last(str s, str substr);
-bool str_contains(str s, str substr);
+int str_contains(str s, str substr);
 str str_pop_first_split(str *s, str split_by);
 void str_print(str s);
 
@@ -56,9 +55,10 @@ strbuf strbuf_create_from_file(FILE *f, char end_marker);
 strbuf strbuf_create_copy(strbuf const *s);
 str strbuf_substr(strbuf const *s, isize_t start, isize_t end);
 str strbuf_to_str(strbuf const *s);
+isize_t strbuf_cmp(strbuf const *s, str t);
 isize_t strbuf_find_first(strbuf const *s, str substr);
 isize_t strbuf_find_last(strbuf const *s, str substr);
-bool strbuf_contains(strbuf const *s, str substr);
+int strbuf_contains(strbuf const *s, str substr);
 void strbuf_resize(strbuf *s, isize_t new_capacity);
 void strbuf_destroy(strbuf *s);
 void strbuf_insert(strbuf *s, str t, isize_t pos);

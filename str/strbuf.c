@@ -27,7 +27,7 @@ strbuf strbuf_create_from_str(str s)
 
 strbuf strbuf_create_from_file(FILE *f, char end_marker)
 {
-	strbuf s = strbuf_create(8);
+	strbuf s = strbuf_create(STRBUF_INIT_CAP);
 	if (s.error)
 		return s;
 
@@ -77,15 +77,23 @@ str strbuf_to_str(strbuf const *s)
 	return (str){ .data = s->data, .size = s->size };
 }
 
-isize_t strbuf_find_first(strbuf const *s, str substr) {
+isize_t strbuf_cmp(strbuf const *s, str t)
+{
+	return str_cmp(strbuf_to_str(s), t);
+}
+
+isize_t strbuf_find_first(strbuf const *s, str substr)
+{
 	return str_find_first(strbuf_to_str(s), substr);
 }
 
-isize_t strbuf_find_last(strbuf const *s, str substr) {
+isize_t strbuf_find_last(strbuf const *s, str substr)
+{
 	return str_find_last(strbuf_to_str(s), substr);
 }
 
-bool strbuf_contains(strbuf const *s, str substr) {
+int strbuf_contains(strbuf const *s, str substr)
+{
 	return str_contains(strbuf_to_str(s), substr);
 }
 
