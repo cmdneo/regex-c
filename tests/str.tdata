@@ -1,4 +1,17 @@
-=> STRBUF_REMOVE
+=> str_strip
+<%
+	str $tmp0 = cstr($strip_me);
+	$tmp0 = str_strip($tmp0, cstr($strip_ends));
+	result = str_cmp($tmp0, cstr($expected)) == 0;
+
+%>
+:strip_me            strip_ends   expected
+"ABAB STUFF ABAB"      "AB"      " STUFF "
+"FRONTMATTER"          "FRONT"   "MATTER"
+"MATTERBACK"           "BACK"    "MATTER"
+
+
+=> strbuf_remove
 <%
 	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
 	strbuf_remove(&$tmp0, $start, $end);
@@ -10,7 +23,7 @@
 "NexT"    1     4           "N"
 "DOnt remove" 1 1 "DOnt remove"
 
-=> STRBUF_APPEND
+=> strbuf_append
 <%
 	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
 	strbuf_append(&$tmp0, cstr($append_this));
@@ -20,3 +33,15 @@
 :s         append_this     expected
 "hello, "     "world"      "hello, world"
 "123"         "456"         "123456"
+
+=> strbuf_strip
+<%
+	strbuf $tmp0 = strbuf_create_from_str(cstr($strip_me));
+	strbuf_strip(&$tmp0, cstr($strip_this));
+	result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:strip_me             strip_this  expected
+"ABAB STUFF ABAB"      "AB"      " STUFF "
+"FRONTMATTER"          "FRONT"   "MATTER"
+"MATTERBACK"           "BACK"    "MATTER"

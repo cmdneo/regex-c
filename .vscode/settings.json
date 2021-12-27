@@ -3,5 +3,7 @@
     "C_Cpp.errorSquiggles": "Enabled",
     "files.associations": {
         "*.h": "c"
-    }
+    },
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true
 }

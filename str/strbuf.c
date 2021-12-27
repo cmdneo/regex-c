@@ -161,6 +161,24 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 	s->size = new_size;
 }
 
+void strbuf_lstrip(strbuf *s, str substr)
+{
+	str tmp = str_lstrip(strbuf_to_str(s), substr);
+	strbuf_remove(s, 0, (isize_t)(tmp.data - s->data));
+}
+
+void strbuf_rstrip(strbuf *s, str substr)
+{
+	str tmp = str_rstrip(strbuf_to_str(s), substr);
+	s->size = tmp.size;
+}
+
+void strbuf_strip(strbuf *s, str substr)
+{
+	strbuf_lstrip(s, substr);
+	strbuf_rstrip(s, substr);
+}
+
 void strbuf_replace(strbuf *s, str old, str new)
 {
 	if (s->error)

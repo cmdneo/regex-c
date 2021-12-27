@@ -1,5 +1,3 @@
-Main page {#mainpage}
+[Main page](#main-page) 
 ===
-
-TODO
 

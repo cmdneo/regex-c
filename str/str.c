@@ -57,6 +57,7 @@ isize_t str_find_last(str s, str substr)
 		isize_t cmp_result = str_cmp(str_substr(s, i, i + substr.size), substr);
 		if (cmp_result == 0)
 			return i;
+
 	}
 
 	return -substr.size;
@@ -65,6 +66,38 @@ isize_t str_find_last(str s, str substr)
 int str_contains(str s, str substr)
 {
 	return str_find_first(s, substr) >= 0;
+}
+
+str str_lstrip(str s, str substr) {
+	str ret = s;
+	isize_t substr_at = str_find_first(ret, substr);
+	/* Continue as long as substr is at the start of the string ret and remove it */
+	while (substr_at == 0) {
+		ret = str_substr(ret, substr.size, ret.size);
+		substr_at = str_find_first(ret, substr);
+	}
+
+	return ret;
+}
+
+str str_rstrip(str s, str substr) {
+	str ret = s;
+	isize_t substr_at = str_find_last(ret, substr);
+	/* Continue as long as substr is at the end of the string ret and remove it */
+	while (substr_at == ret.size - substr.size) {
+		ret = str_substr(ret, 0, substr_at);
+		substr_at = str_find_last(ret, substr);
+	}
+
+	return ret;
+}
+
+str str_strip(str s, str substr) {
+	str ret = s;
+	ret = str_lstrip(ret, substr);
+	ret = str_rstrip(ret, substr);
+
+	return ret;
 }
 
 str str_pop_first_split(str *s, str split_by)

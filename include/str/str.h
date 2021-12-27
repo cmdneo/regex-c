@@ -10,7 +10,12 @@ enum { MEMORY_SCALE_FACTOR = 2, STRBUF_INIT_CAP = 8 };
 
 /* -- Errors -- */
 
-enum strlib_errors { STRLIB_INVALID_INDEX = 100, STRLIB_NO_MEM };
+enum strlib_errors {
+	STRLIB_INVALID_INDEX = 100,
+	STRLIB_NO_MEM,
+	STRLIB_ALREADY_EXISTS,
+	STRLIB_NOT_FOUND
+};
 
 /* -- Data structures -- */
 
@@ -44,6 +49,9 @@ isize_t str_cmp(str s, str t);
 isize_t str_find_first(str s, str substr);
 isize_t str_find_last(str s, str substr);
 int str_contains(str s, str substr);
+str str_lstrip(str s, str substr);
+str str_rstrip(str s, str substr);
+str str_strip(str s, str substr);
 str str_pop_first_split(str *s, str split_by);
 void str_print(str s);
 
@@ -63,6 +71,9 @@ void strbuf_resize(strbuf *s, isize_t new_capacity);
 void strbuf_destroy(strbuf *s);
 void strbuf_insert(strbuf *s, str t, isize_t pos);
 void strbuf_remove(strbuf *s, isize_t start, isize_t end);
+void strbuf_lstrip(strbuf *s, str substr);
+void strbuf_rstrip(strbuf *s, str substr);
+void strbuf_strip(strbuf *s, str substr);
 void strbuf_replace(strbuf *s, str old, str new);
 void strbuf_append(strbuf *s, str t);
 void strbuf_prepend(strbuf *s, str t);
