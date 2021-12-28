@@ -7,8 +7,7 @@ strbuf strbuf_create(isize_t capacity)
 {
 	char *data = malloc(capacity);
 	if (data == NULL)
-		return (strbuf){ .error = STRLIB_NO_MEM };
-
+		return (strbuf){ .error = STR_NO_MEM };
 	return (strbuf){ .data = data, .capacity = capacity, .size = 0, .error = 0 };
 }
 
@@ -53,11 +52,13 @@ strbuf strbuf_create_from_file(FILE *f, char end_marker)
 
 strbuf strbuf_create_copy(strbuf const *s)
 {
+	if (s->error)
+		return (strbuf){ .error = s->error };
 	strbuf ret = strbuf_create(s->capacity);
-	ret.size = s->size;
 	if (ret.error)
 		return ret;
 
+	ret.size = s->size;
 	for (isize_t i = 0; i < s->size; i++)
 		ret.data[i] = s->data[i];
 
@@ -66,7 +67,7 @@ strbuf strbuf_create_copy(strbuf const *s)
 
 str strbuf_substr(strbuf const *s, isize_t start, isize_t end)
 {
-	if (!strlib_is_valid_range(s->size, start, end))
+	if (!str_is_valid_range(s->size, start, end))
 		return (str){ 0 };
 
 	return (str){ .size = end - start, .data = s->data + start };
@@ -74,12 +75,9 @@ str strbuf_substr(strbuf const *s, isize_t start, isize_t end)
 
 str strbuf_to_str(strbuf const *s)
 {
+	if (s->error)
+		return (str){ 0 };
 	return (str){ .data = s->data, .size = s->size };
-}
-
-isize_t strbuf_cmp(strbuf const *s, str t)
-{
-	return str_cmp(strbuf_to_str(s), t);
 }
 
 isize_t strbuf_find_first(strbuf const *s, str substr)
@@ -90,6 +88,16 @@ isize_t strbuf_find_first(strbuf const *s, str substr)
 isize_t strbuf_find_last(strbuf const *s, str substr)
 {
 	return str_find_last(strbuf_to_str(s), substr);
+}
+
+isize_t strbuf_cmp(strbuf const *s, str t)
+{
+	return str_cmp(strbuf_to_str(s), t);
+}
+
+isize_t strbuf_cmp2(strbuf const *s, strbuf const *t)
+{
+	return str_cmp(strbuf_to_str(s), strbuf_to_str(t));
 }
 
 int strbuf_contains(strbuf const *s, str substr)
@@ -104,7 +112,7 @@ void strbuf_resize(strbuf *s, isize_t new_capacity)
 
 	char *new_data = realloc(s->data, new_capacity);
 	if (new_data == NULL) {
-		s->error = STRLIB_NO_MEM;
+		s->error = STR_NO_MEM;
 		return;
 	}
 
@@ -115,7 +123,7 @@ void strbuf_resize(strbuf *s, isize_t new_capacity)
 void strbuf_destroy(strbuf *s)
 {
 	free(s->data);
-	*s = (strbuf){ 0 };
+	*s = (strbuf){ .error = STR_MEM_FREED };
 }
 
 void strbuf_insert(strbuf *s, str t, isize_t pos)
@@ -147,8 +155,8 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 {
 	if (s->error)
 		return;
-	if (!strlib_is_valid_range(s->size, start, end)) {
-		s->error = STRLIB_INVALID_INDEX;
+	if (!str_is_valid_range(s->size, start, end)) {
+		s->error = STR_INVALID_INDEX;
 		return;
 	}
 
@@ -163,12 +171,18 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 
 void strbuf_lstrip(strbuf *s, str substr)
 {
+	if (s->error)
+		return;
+
 	str tmp = str_lstrip(strbuf_to_str(s), substr);
 	strbuf_remove(s, 0, (isize_t)(tmp.data - s->data));
 }
 
 void strbuf_rstrip(strbuf *s, str substr)
 {
+	if (s->error)
+		return;
+
 	str tmp = str_rstrip(strbuf_to_str(s), substr);
 	s->size = tmp.size;
 }
@@ -238,6 +252,9 @@ void strbuf_to_lower(strbuf *s)
 
 void strbuf_print(strbuf const *s)
 {
+	if (s->error)
+		return;
+
 	for (isize_t i = 0; i < s->size; i++)
-		strlib_print_char(s->data[i]);
+		putchar(s->data[i]);
 }

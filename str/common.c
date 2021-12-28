@@ -1,22 +1,20 @@
-#include <stdio.h>
-
 #include "str/str.h"
 
-int strlib_is_valid_range(isize_t size, isize_t start, isize_t end)
+int str_is_valid_range(isize_t size, isize_t start, isize_t end)
 {
 	return !(start > end || end > size || start < 0);
 }
 
-void strbuf_show_error_impl(int error)
+void strbuf_show_error(int error)
 {
 	str err_str;
 
 	switch (error) {
-	case STRLIB_INVALID_INDEX:
+	case STR_INVALID_INDEX:
 		err_str = cstr("Invalid Index/Indices given!\n");
 		break;
 
-	case STRLIB_NO_MEM:
+	case STR_NO_MEM:
 		err_str = cstr("Memory allocation failed!\n");
 		break;
 
@@ -26,9 +24,4 @@ void strbuf_show_error_impl(int error)
 	}
 
 	str_print(err_str);
-}
-
-void strlib_print_char(char c)
-{
-	putchar(c);
 }

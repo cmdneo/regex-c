@@ -10,17 +10,17 @@ enum { MEMORY_SCALE_FACTOR = 2, STRBUF_INIT_CAP = 8 };
 
 /* -- Errors -- */
 
-enum strlib_errors {
-	STRLIB_INVALID_INDEX = 100,
-	STRLIB_NO_MEM,
-	STRLIB_ALREADY_EXISTS,
-	STRLIB_NOT_FOUND
+enum str_errors {
+	STR_INVALID_INDEX = 100,
+	STR_NO_MEM,
+	STR_MEM_FREED,
+	STR_ALREADY_EXISTS,
+	STR_NOT_FOUND,
 };
 
 /* -- Data structures -- */
 
 typedef signed long long isize_t;
-typedef void *(*allocator_fn)(void *ptr, isize_t size);
 
 typedef struct str {
 	isize_t size;
@@ -37,9 +37,8 @@ typedef struct strbuf {
 /* -- Functions -- */
 /* Common Functions */
 
-int strlib_is_valid_range(isize_t size, isize_t start, isize_t end);
-void strlib_show_error_impl(int error);
-void strlib_print_char(char c);
+int str_is_valid_range(isize_t size, isize_t start, isize_t end);
+void str_show_error(int error);
 
 /* str functions */
 
@@ -63,9 +62,10 @@ strbuf strbuf_create_from_file(FILE *f, char end_marker);
 strbuf strbuf_create_copy(strbuf const *s);
 str strbuf_substr(strbuf const *s, isize_t start, isize_t end);
 str strbuf_to_str(strbuf const *s);
-isize_t strbuf_cmp(strbuf const *s, str t);
 isize_t strbuf_find_first(strbuf const *s, str substr);
 isize_t strbuf_find_last(strbuf const *s, str substr);
+isize_t strbuf_cmp(strbuf const *s, str t);
+isize_t strbuf_cmp2(strbuf const *s, strbuf const *t);
 int strbuf_contains(strbuf const *s, str substr);
 void strbuf_resize(strbuf *s, isize_t new_capacity);
 void strbuf_destroy(strbuf *s);
@@ -84,14 +84,7 @@ void strbuf_print(strbuf const *s);
 
 /* -- Macros -- */
 
-#define PRI_isize_t "lli"
-#define show_error(s)                                                                              \
-	strlib_show_error_impl(_Generic((s), \
-strbuf: (s).error,\
-strbuf*: (*s).error,\
-strbuf const*: (*s).error,\
-strbuf const* const: (*s).error,\
-))
+#define PRI_isize_t "lld"
 
 /* -- Constants -- */
 

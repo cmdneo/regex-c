@@ -10,7 +10,7 @@ str cstr(char const *s)
 
 str str_substr(str s, isize_t start, isize_t end)
 {
-	if (!strlib_is_valid_range(s.size, start, end))
+	if (!str_is_valid_range(s.size, start, end))
 		return (str){ 0 };
 
 	return (str){
@@ -118,5 +118,5 @@ str str_pop_first_split(str *s, str split_by)
 void str_print(str s)
 {
 	for (isize_t i = 0; i < s.size; i++)
-		strlib_print_char(s.data[i]);
+		putchar(s.data[i]);
 }
