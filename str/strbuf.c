@@ -8,7 +8,9 @@ strbuf strbuf_create(isize_t capacity)
 	char *data = malloc(capacity);
 	if (data == NULL)
 		return (strbuf){ .error = STR_NO_MEM };
-	return (strbuf){ .data = data, .capacity = capacity, .size = 0, .error = 0 };
+	return (strbuf){
+		.data = data, .capacity = capacity, .size = 0, .error = 0
+	};
 }
 
 strbuf strbuf_create_from_str(str s)
@@ -31,7 +33,8 @@ strbuf strbuf_create_from_file(FILE *f, char end_marker)
 		return s;
 
 	int c;
-	for (isize_t size = 1; (c = fgetc(f)) != EOF && c != end_marker; size++) {
+	for (isize_t size = 1; (c = fgetc(f)) != EOF && c != end_marker;
+	     size++) {
 		if (s.capacity >= size) {
 			s.data[size - 1] = c;
 			s.size = size;
@@ -100,9 +103,9 @@ isize_t strbuf_cmp2(strbuf const *s, strbuf const *t)
 	return str_cmp(strbuf_to_str(s), strbuf_to_str(t));
 }
 
-int strbuf_contains(strbuf const *s, str substr)
+isize_t strbuf_count(strbuf const *s, str t)
 {
-	return str_contains(strbuf_to_str(s), substr);
+	return str_count(strbuf_to_str(s), t);
 }
 
 void strbuf_resize(strbuf *s, isize_t new_capacity)

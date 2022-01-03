@@ -38,64 +38,74 @@ isize_t str_cmp(str s, str t)
 	return ret;
 }
 
-isize_t str_find_first(str s, str substr)
+isize_t str_find_first(str s, str t)
 {
-	isize_t ncmps = s.size - substr.size + 1;
+	isize_t ncmps = s.size - t.size + 1;
 	for (isize_t i = 0; i < ncmps; i++) {
-		isize_t cmp_result = str_cmp(str_substr(s, i, i + substr.size), substr);
+		isize_t cmp_result = str_cmp(str_substr(s, i, i + t.size), t);
 		if (cmp_result == 0)
 			return i;
 	}
 
-	return -substr.size;
+	return -t.size;
 }
 
-isize_t str_find_last(str s, str substr)
+isize_t str_find_last(str s, str t)
 {
-	isize_t ncmps = s.size - substr.size + 1;
+	isize_t ncmps = s.size - t.size + 1;
 	for (isize_t i = ncmps - 1; i >= 0; i--) {
-		isize_t cmp_result = str_cmp(str_substr(s, i, i + substr.size), substr);
+		isize_t cmp_result = str_cmp(str_substr(s, i, i + t.size), t);
 		if (cmp_result == 0)
 			return i;
-
 	}
 
-	return -substr.size;
+	return -t.size;
 }
 
-int str_contains(str s, str substr)
+isize_t str_count(str s, str t)
 {
-	return str_find_first(s, substr) >= 0;
+	isize_t count = 0;
+	isize_t t_at = str_find_first(s, t);
+	while (t_at >= 0) {
+		count++;
+		s = str_substr(s, t_at, t_at + t.size);
+		t_at = str_find_first(s, t);
+	}
+
+	return count;
 }
 
-str str_lstrip(str s, str substr) {
+str str_lstrip(str s, str t)
+{
 	str ret = s;
-	isize_t substr_at = str_find_first(ret, substr);
-	/* Continue as long as substr is at the start of the string ret and remove it */
+	isize_t substr_at = str_find_first(ret, t);
+	/* Continue as long as t is at the start of the string ret and remove it */
 	while (substr_at == 0) {
-		ret = str_substr(ret, substr.size, ret.size);
-		substr_at = str_find_first(ret, substr);
+		ret = str_substr(ret, t.size, ret.size);
+		substr_at = str_find_first(ret, t);
 	}
 
 	return ret;
 }
 
-str str_rstrip(str s, str substr) {
+str str_rstrip(str s, str t)
+{
 	str ret = s;
-	isize_t substr_at = str_find_last(ret, substr);
-	/* Continue as long as substr is at the end of the string ret and remove it */
-	while (substr_at == ret.size - substr.size) {
+	isize_t substr_at = str_find_last(ret, t);
+	/* Continue as long as t is at the end of the string ret and remove it */
+	while (substr_at == ret.size - t.size) {
 		ret = str_substr(ret, 0, substr_at);
-		substr_at = str_find_last(ret, substr);
+		substr_at = str_find_last(ret, t);
 	}
 
 	return ret;
 }
 
-str str_strip(str s, str substr) {
+str str_strip(str s, str t)
+{
 	str ret = s;
-	ret = str_lstrip(ret, substr);
-	ret = str_rstrip(ret, substr);
+	ret = str_lstrip(ret, t);
+	ret = str_rstrip(ret, t);
 
 	return ret;
 }

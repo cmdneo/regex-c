@@ -7,7 +7,12 @@ project(RegexLib
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
-set(CMAKE_C_FLAGS "-Wall -Wextra")
+if (MSVC)
+	add_compile_options(/W4)
+else()
+	add_compile_options(-Wall -Wextra -pedantic)
+endif()
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -19,7 +24,7 @@ add_library(regex INTERFACE)
 target_link_libraries(regex INTERFACE re str)
 
 # Start testing
-enable_testing()
+include(CTest)
 set(TESTS_DIR "${CMAKE_SOURCE_DIR}/tests")
 set(CODEGEN_DIR "${CMAKE_BINARY_DIR}/tests")
 
@@ -38,3 +43,4 @@ add_custom_command(
 add_executable(test-str "${CODEGEN_DIR}/test-str.c")
 target_link_libraries(test-str regex)
 add_test(NAME "test-str" COMMAND test-str)
+set_tests_properties(test-str PROPERTIES TIMEOUT 5)

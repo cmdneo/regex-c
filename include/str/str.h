@@ -20,7 +20,7 @@ enum str_errors {
 
 /* -- Data structures -- */
 
-typedef signed long long isize_t;
+typedef long isize_t;
 
 typedef struct str {
 	isize_t size;
@@ -45,12 +45,12 @@ void str_show_error(int error);
 str cstr(char const *s);
 str str_substr(str s, isize_t start, isize_t end);
 isize_t str_cmp(str s, str t);
-isize_t str_find_first(str s, str substr);
-isize_t str_find_last(str s, str substr);
-int str_contains(str s, str substr);
-str str_lstrip(str s, str substr);
-str str_rstrip(str s, str substr);
-str str_strip(str s, str substr);
+isize_t str_find_first(str s, str t);
+isize_t str_find_last(str s, str t);
+isize_t str_count(str s, str t);
+str str_lstrip(str s, str t);
+str str_rstrip(str s, str t);
+str str_strip(str s, str t);
 str str_pop_first_split(str *s, str split_by);
 void str_print(str s);
 
@@ -62,18 +62,18 @@ strbuf strbuf_create_from_file(FILE *f, char end_marker);
 strbuf strbuf_create_copy(strbuf const *s);
 str strbuf_substr(strbuf const *s, isize_t start, isize_t end);
 str strbuf_to_str(strbuf const *s);
-isize_t strbuf_find_first(strbuf const *s, str substr);
-isize_t strbuf_find_last(strbuf const *s, str substr);
+isize_t strbuf_find_first(strbuf const *s, str t);
+isize_t strbuf_find_last(strbuf const *s, str t);
 isize_t strbuf_cmp(strbuf const *s, str t);
 isize_t strbuf_cmp2(strbuf const *s, strbuf const *t);
-int strbuf_contains(strbuf const *s, str substr);
+isize_t strbuf_count(strbuf const *s, str t);
 void strbuf_resize(strbuf *s, isize_t new_capacity);
 void strbuf_destroy(strbuf *s);
 void strbuf_insert(strbuf *s, str t, isize_t pos);
 void strbuf_remove(strbuf *s, isize_t start, isize_t end);
-void strbuf_lstrip(strbuf *s, str substr);
-void strbuf_rstrip(strbuf *s, str substr);
-void strbuf_strip(strbuf *s, str substr);
+void strbuf_lstrip(strbuf *s, str t);
+void strbuf_rstrip(strbuf *s, str t);
+void strbuf_strip(strbuf *s, str t);
 void strbuf_replace(strbuf *s, str old, str new);
 void strbuf_append(strbuf *s, str t);
 void strbuf_prepend(strbuf *s, str t);
@@ -84,7 +84,7 @@ void strbuf_print(strbuf const *s);
 
 /* -- Macros -- */
 
-#define PRI_isize_t "lld"
+#define PRI_isize_t "ld"
 
 /* -- Constants -- */
 

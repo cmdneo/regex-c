@@ -218,35 +218,35 @@ def parse_tdf(lines: list[str], fpath):
     arg_line = ""
 
     for i, line in enumerate(lines):
-        line = line.strip()
+        s_line = line.strip()
         # Initialize new test when TEST_START_TAG is encountered
-        if line.startswith(TEST_START_TAG):
+        if s_line.startswith(TEST_START_TAG):
             active_test = Test(
 
-                line.lstrip(TEST_START_TAG).strip(),
+                s_line.lstrip(TEST_START_TAG).strip(),
                 "", 0, [], []
             )
             tests.append(active_test)
-        elif line.startswith(COMMENT_START_TAG) or line == "":
+        elif s_line.startswith(COMMENT_START_TAG) or s_line == "":
             continue
-        elif line.startswith(BLOCK_START_TAG):
+        elif s_line.startswith(BLOCK_START_TAG):
             inside_code_block = True
-        elif line.endswith(BLOCK_END_TAG):
+        elif s_line.endswith(BLOCK_END_TAG):
             inside_code_block = False
         # Extract code inside the code block <% ..... %>
         elif active_test and inside_code_block:
             active_test.code += line + "\n"
 
         # Extract argument names
-        elif line.startswith(ARGS_START_TAG):
-            arg_line = line
-            args = line[1:].split()
+        elif s_line.startswith(ARGS_START_TAG):
+            arg_line = s_line
+            args = s_line[1:].split()
             active_test.arg_names = list(map(lambda s: s.strip(), args))
             active_test.nargs = len(args)
 
         # Extract argyment values
         elif active_test and not inside_code_block:
-            argvals = parse_args(line)
+            argvals = parse_args(s_line)
             if len(argvals) != active_test.nargs:
                 raise ValueError(f"""\
 Argument values list incosistent
