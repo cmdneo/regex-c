@@ -44,24 +44,25 @@ test-data file Example:
 "123"         "456"         "123456"
 
 
-usage: python3 gentests.py [-h] [-I [INCLUDES ...]] [--tests TESTS]
-                           [--codegen CODEGEN] -o OUTFILE -i INFILE
+usage: python3 gentests.py [-h] [-I [INCLUDES ...]] [--tests TESTS_DIR]
+                           [--codegen CODEGEN_DIR] -o OUTFILE -i INFILE
 
 Code generator for automated testing
 
 options:
-  -h, --help               show this help message and exit
-  --tests       TESTS      Test data directory      (default=tests/)
-  --codegen     CODEGEN    Codegen output directory (default=build/tests)
+  -h, --help                show this help message and exit
+  --tests       TESTS_DIR   Test data directory      (default=tests/)
+  --codegen     CODEGEN_DIR Codegen output directory (default=build/tests/)
   -o, --outfile OUTFILE
   -i, --infile  INFILE
   -I [INCLUDES ...], --includes [INCLUDES ...]
-                           Include files to be used for a module
+                            Include files to be used for a module
 
 """
 
 import argparse
 import datetime
+import functools
 import pathlib
 import re
 import secrets
@@ -109,6 +110,7 @@ C_MODULE_TMPL = string.Template(R"""
  * Generation time: $GENERATION_TIME
  * Generated from : $MODULE_NAME
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -233,18 +235,17 @@ def parse_tdf(lines: list[str], fpath):
             inside_code_block = True
         elif s_line.endswith(BLOCK_END_TAG):
             inside_code_block = False
-        # Extract code inside the code block <% ..... %>
+        # Extract code inside <% %> block
         elif active_test and inside_code_block:
             active_test.code += line + "\n"
 
         # Extract argument names
         elif s_line.startswith(ARGS_START_TAG):
-            arg_line = s_line
-            args = s_line[1:].split()
+            arg_line = s_line.lstrip(ARGS_START_TAG)
+            args = arg_line.split()
             active_test.arg_names = list(map(lambda s: s.strip(), args))
             active_test.nargs = len(args)
-
-        # Extract argyment values
+        # Extract argument values
         elif active_test and not inside_code_block:
             argvals = parse_args(s_line)
             if len(argvals) != active_test.nargs:
@@ -261,11 +262,11 @@ While arg-names line is:
 
 
 # GENERATE FULL code from using templates for a module
-def gen_mod_code(test_mod: list[Test], include_stmts, mod_name):
+def gen_mod_code(tests_mod: list[Test], include_stmts, mod_name):
     module_code = ""
     gen_time = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S (local)")
 
-    for test in test_mod:
+    for test in tests_mod:
         tests_code = ""
         for argval in test.argvals:
             # Generate tmp0-tmp9 variable names
@@ -300,10 +301,18 @@ def gen_mod_code(test_mod: list[Test], include_stmts, mod_name):
 def main():
     parser = argparse.ArgumentParser(
         description="Code generator for automated testing")
-    parser.add_argument("--tests", default="tests/",
-                        help="Test data directory (default=tests/)")
-    parser.add_argument("--codegen", default="build/tests/",
-                        help="Codegen output directory (default=build/tests)")
+    parser.add_argument(
+        "--tests",
+        metavar="TESTS_DIR",
+        default="tests/",
+        help="Test data directory (default=tests/)"
+    )
+    parser.add_argument(
+        "--codegen",
+        metavar="CODEGEN_DIR",
+        default="build/tests/",
+        help="Codegen output directory (default=build/tests/)"
+    )
     parser.add_argument("-o", "--outfile", required=True)
     parser.add_argument("-i", "--infile", required=True)
     parser.add_argument(
@@ -337,9 +346,10 @@ def main():
 
 
 if __name__ == "__main__":
+    print_err = functools.partial(print, file=sys.stderr)
     try:
         main()
     except ValueError as e:
-        print("ERROR:", e)
-        print("EXIT!!1")
+        print_err("ERROR:", e,)
+        print_err("EXIT!!1")
         sys.exit(1)

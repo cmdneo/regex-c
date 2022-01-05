@@ -68,7 +68,7 @@ isize_t str_count(str s, str t)
 	isize_t t_at = str_find_first(s, t);
 	while (t_at >= 0) {
 		count++;
-		s = str_substr(s, t_at, t_at + t.size);
+		s = str_substr(s, t_at + t.size, s.size);
 		t_at = str_find_first(s, t);
 	}
 

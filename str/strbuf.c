@@ -165,7 +165,7 @@ void strbuf_remove(strbuf *s, isize_t start, isize_t end)
 
 	isize_t substr_size = end - start;
 	isize_t new_size = s->size - substr_size;
-	/* Shift string segment to the left by size of the removes substring */
+	/* Shift string segment to the left by size of the removed substring */
 	for (isize_t i = start; i < new_size; i++)
 		s->data[i] = s->data[i + substr_size];
 

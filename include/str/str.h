@@ -1,3 +1,13 @@
+/**
+ * @file str.h
+ * @brief String library 
+ * @version 0.1
+ * @date 2022-01-05
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #ifndef INCLUDE_STR_STR_H
 #define INCLUDE_STR_STR_H
 
@@ -6,7 +16,10 @@
 
 /* -- Config -- */
 
-enum { MEMORY_SCALE_FACTOR = 2, STRBUF_INIT_CAP = 8 };
+enum str_defaults {
+	MEMORY_SCALE_FACTOR = 2,
+	STRBUF_INIT_CAP = 8,
+};
 
 /* -- Errors -- */
 
@@ -51,8 +64,20 @@ isize_t str_count(str s, str t);
 str str_lstrip(str s, str t);
 str str_rstrip(str s, str t);
 str str_strip(str s, str t);
+
+/**
+ * @brief Splits and pops string one by one.
+ *        If delimeter is absent in the string then an empty string is
+ *        returned and the original string remains unmodified
+ *
+ * @param s modified by removing the first delimiter and the chars before it
+ * @param split_by the delimiter
+ * @return str the popped substring
+ */
 str str_pop_first_split(str *s, str split_by);
 void str_print(str s);
+
+
 
 /* strbuf functions */
 
