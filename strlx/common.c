@@ -1,11 +1,11 @@
-#include "str/str.h"
+#include "strlx/strlx.h"
 
-int str_is_valid_range(isize_t size, isize_t start, isize_t end)
+int str_is_valid_range(isize size, isize start, isize end)
 {
 	return !(start > end || end > size || start < 0);
 }
 
-void strbuf_show_error(int error)
+void strbuf_show_error(enum str_error error)
 {
 	str err_str;
 

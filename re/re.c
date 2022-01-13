@@ -1,4 +1,4 @@
 #include "re/re.h"
-#include "str/str.h"
+#include "strlx/strlx.h"
 
 /* TODO */

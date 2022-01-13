@@ -1,40 +1,65 @@
 #ifndef INCLUDE_RE_RE_H
 #define INCLUDE_RE_RE_H
 
-#include "str/str.h"
+#include "strlx/strlx.h"
 
 /* -- Config -- */
 
-enum RE_SPL_CHARS {
-	RE_BKSLASH = '\\',
-	RE_LBRACKET = '[',
-	RE_RBRACKET = ']',
-	RE_LBRACE = '{',
-	RE_RBRACE = '}',
-	RE_LPAREN = '(',
-	RE_RPAREN = ')',
-	RE_QMARK = '?',
-	RE_CARET = '^',
-	RE_DOLLAR = '$',
-	RE_ASTERISK = '*',
-	RE_PLUS = '+',
-	RE_PERIOD = '.',
-	RE_BAR = '|',
+enum re_metachars {
+	RM_BKSLASH = '\\',
+	RM_LBRACKET = '[',
+	RM_RBRACKET = ']',
+	RM_LBRACE = '{',
+	RM_RBRACE = '}',
+	RM_LPAREN = '(',
+	RM_RPAREN = ')',
+	RM_QMARK = '?',
+	RM_CARET = '^',
+	RM_DOLLAR = '$',
+	RM_ASTERISK = '*',
+	RM_PLUS = '+',
+	RM_PERIOD = '.',
+	RM_BAR = '|',
 };
 
-enum RE_SCC_CHARS {
-	RE_DIGIT = 'd',
-	RE_NON_DIGIT = 'D',
-	RE_WORD_CHAR = 'w',
-	RE_NON_WORD_CHAR = 'W',
-	RE_WHITESPACE = 's',
-	RE_NON_WHITESPACE = 'S',
+enum re_char_classes {
+	RC_DIGIT = 'd',
+	RC_NON_DIGIT = 'D',
+	RC_WORD_CHAR = 'w',
+	RC_NON_WORD_CHAR = 'W',
+	RC_WHITESPACE = 's',
+	RC_NON_WHITESPACE = 'S',
 
 };
 
 /* -- Data structures -- */
-/* TODO */
 
-/* -- Functions -- */
-/* TODO */
+// typedef struct rrd {
+// 	int nnodes;
+// 	rrd *nodes;
+// 	int ngroups;
+// 	capgroup groups;
+// } rrd;
+
+// typedef struct capgroup {
+// } capgroup;
+
+// typedef struct re {
+// 	str pattern;
+// 	rrd cflow;
+// } re;
+
+// typedef struct matchg {
+// 	isize start;
+// 	isize end;
+// 	str orig;
+// 	str match;
+// 	str gname;
+// } matchg;
+
+// /* -- Functions -- */
+// re *re_parse(str pattern);
+// matchg *re_starts_with(re *regex, str s);
+// matchg *re_search(re *regex, str s)
+
 #endif
