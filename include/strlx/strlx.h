@@ -1,5 +1,5 @@
 /**
- * @file str.h
+ * @file strlx.h
  * @brief String library 
  * @version 0.1
  * @date 2022-01-05
@@ -8,8 +8,8 @@
  * 
  */
 
-#ifndef INCLUDE_STRLX_STR_H
-#define INCLUDE_STRLX_STR_H
+#ifndef INCLUDE_STRLX_STR_H_
+#define INCLUDE_STRLX_STR_H_
 
 /* For FILE type */
 #include <stdio.h>
@@ -39,6 +39,12 @@ typedef struct str {
 	char const *data;
 } str;
 
+/** Creates str from C-string literal, useful for consts.*/
+#define M_str(string_literal)                                                  \
+	(str)                                                                  \
+	{                                                                      \
+		.data = (string_literal), .size = (sizeof(string_literal) - 1) \
+	}
 str cstr(char const *s);
 str str_substr(str s, isize start, isize end);
 isize str_cmp(str s, str t);
@@ -70,11 +76,12 @@ typedef struct strbuf {
 	int error;
 } strbuf;
 
-strbuf strbuf_from_cap(isize capacity);
-strbuf strbuf_from_str(str s);
-strbuf strbuf_from_cstr(char const *s);
-strbuf strbuf_from_file(FILE *f);
-strbuf strbuf_copy(strbuf const *s);
+strbuf *strbuf_create_empty();
+strbuf *strbuf_from_cap(isize capacity);
+strbuf *strbuf_from_str(str s);
+strbuf *strbuf_from_cstr(char const *s);
+strbuf *strbuf_from_file(FILE *f);
+strbuf *strbuf_copy(strbuf const *s);
 str strbuf_substr(strbuf const *s, isize start, isize end);
 str strbuf_to_str(strbuf const *s);
 isize strbuf_cmp(strbuf const *s, str t);
@@ -85,7 +92,7 @@ isize strbuf_count(strbuf const *s, str t);
 int strbuf_starts_with(strbuf *s, str t);
 int strbuf_ends_with(strbuf *s, str t);
 void strbuf_resize(strbuf *s, isize new_capacity);
-void strbuf_destroy(strbuf *s);
+void strbuf_destroy(strbuf **s);
 void strbuf_insert(strbuf *s, str t, isize pos);
 void strbuf_remove(strbuf *s, isize start, isize end);
 void strbuf_lstrip(strbuf *s, str t);
@@ -124,14 +131,14 @@ void str_show_error(enum str_error error);
 
 /* -- Constants -- */
 
-static const str STR_DIGITS = { 10, "0123456789" };
-static const str STR_LOWERCASE = { 26, "abcdefghijklmnopqrstuvwxyz" };
-static const str STR_UPPERCASE = { 26, "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
-static const str STR_LETTERS = { 52, "abcdefghijklmnopqrstuvwxyz"
-				     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
-static const str STR_WHITESPACES = { 6, " \t\r\n\f\v" };
-static const str STR_ALNUM = { 62, "0123456789"
+static const str STR_DIGITS = M_str("0123456789");
+static const str STR_LOWERCASE = M_str("abcdefghijklmnopqrstuvwxyz");
+static const str STR_UPPERCASE = M_str("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+static const str STR_LETTERS = M_str("abcdefghijklmnopqrstuvwxyz"
+				     "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+static const str STR_WHITESPACES = M_str(" \t\r\n\f\v");
+static const str STR_ALNUM = M_str("0123456789"
 				   "abcdefghijklmnopqrstuvwxyz"
-				   "ABCDEFGHIJKLMNOPQRSTUVWXYZ" };
+				   "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 #endif /* END str/str.h */

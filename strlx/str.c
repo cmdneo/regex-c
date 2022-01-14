@@ -87,6 +87,9 @@ int str_ends_with(str s, str t)
 
 str str_lstrip(str s, str t)
 {
+	if (t.size == 0)
+		return s;
+
 	str ret = s;
 	while (str_starts_with(ret, t))
 		ret = str_substr(ret, t.size, ret.size);
@@ -96,6 +99,9 @@ str str_lstrip(str s, str t)
 
 str str_rstrip(str s, str t)
 {
+	if (t.size == 0)
+		return s;
+
 	str ret = s;
 	while (str_ends_with(ret, t))
 		ret = str_substr(ret, 0, ret.size - t.size);

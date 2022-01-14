@@ -3,72 +3,92 @@
 
 #include "strlx/strlx.h"
 
-strbuf strbuf_from_cap(isize capacity)
+strbuf *strbuf_create_empty()
 {
-	char *data = malloc(capacity);
-	if (data == NULL)
-		return (strbuf){ .error = STR_NO_MEM };
-	return (strbuf){
-		.data = data, .capacity = capacity, .size = 0, .error = 0
-	};
-}
-
-strbuf strbuf_from_str(str s)
-{
-	strbuf ret = strbuf_from_cap(s.size);
-	ret.size = s.size;
-	if (ret.error)
-		return ret;
-
-	for (isize i = 0; i < s.size; i++)
-		ret.data[i] = s.data[i];
+	strbuf *ret = calloc(1, sizeof *ret);
+	if (ret == NULL)
+		return NULL;
+	*ret = (strbuf){ 0 };
 
 	return ret;
 }
 
-strbuf strbuf_from_cstr(char const *s)
+strbuf *strbuf_from_cap(isize capacity)
+{
+	strbuf *ret = strbuf_create_empty();
+	if (ret == NULL)
+		return NULL;
+	char *data = malloc(capacity);
+	if (data == NULL) {
+		free(ret);
+		return NULL;
+	}
+	*ret = (strbuf){
+		.data = data,
+		.capacity = capacity,
+		.size = 0,
+		.error = 0,
+	};
+
+	return ret;
+}
+
+strbuf *strbuf_from_str(str s)
+{
+	strbuf *ret = strbuf_from_cap(s.size);
+	if (ret == NULL)
+		return NULL;
+
+	ret->size = s.size;
+	for (isize i = 0; i < s.size; i++)
+		ret->data[i] = s.data[i];
+
+	return ret;
+}
+
+strbuf *strbuf_from_cstr(char const *s)
 {
 	return strbuf_from_str(cstr(s));
 }
 
-strbuf strbuf_from_file(FILE *f)
+strbuf *strbuf_from_file(FILE *f)
 {
-	strbuf s = strbuf_from_cap(STRBUF_INIT_CAP);
-	if (s.error)
-		return s;
+	strbuf *ret = strbuf_from_cap(STRBUF_INIT_CAP);
+	if (ret == NULL)
+		return NULL;
 
 	int c;
 	isize size;
 	for (size = 0; (c = fgetc(f)) != EOF; size++) {
-		if (s.capacity >= size) {
-			s.data[size - 1] = c;
-			s.size = size;
+		if (ret->capacity >= size) {
+			ret->data[size - 1] = c;
+			ret->size = size;
 			continue;
 		}
 
 		isize new_capacity = size * MEMORY_SCALE_FACTOR;
-		strbuf_resize(&s, new_capacity);
-		if (s.error)
+		strbuf_resize(ret, new_capacity);
+		if (ret->error)
 			break;
 
-		s.data[size] = c;
+		ret->data[size] = c;
 	}
-	s.size = size;
+	ret->size = size;
 
-	return s;
+	return ret;
 }
 
-strbuf strbuf_copy(strbuf const *s)
+strbuf *strbuf_copy(strbuf const *s)
 {
-	if (s->error)
-		return (strbuf){ .error = s->error };
-	strbuf ret = strbuf_from_cap(s->capacity);
-	if (ret.error)
-		return ret;
+	if (s == NULL || s->error)
+		return NULL;
+	strbuf *ret = strbuf_from_cap(s->capacity);
+	if (ret == NULL)
+		return NULL;
 
-	ret.size = s->size;
+	ret->size = s->size;
 	for (isize i = 0; i < s->size; i++)
-		ret.data[i] = s->data[i];
+		ret->data[i] = s->data[i];
 
 	return ret;
 }
@@ -83,7 +103,7 @@ str strbuf_substr(strbuf const *s, isize start, isize end)
 
 str strbuf_to_str(strbuf const *s)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return (str){ 0 };
 	return (str){ .data = s->data, .size = s->size };
 }
@@ -124,7 +144,7 @@ int strbuf_ends_with(strbuf *s, str t)
 
 void strbuf_resize(strbuf *s, isize new_capacity)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	char *new_data = realloc(s->data, new_capacity);
@@ -137,17 +157,18 @@ void strbuf_resize(strbuf *s, isize new_capacity)
 	s->data = new_data;
 }
 
-void strbuf_destroy(strbuf *s)
+void strbuf_destroy(strbuf **s)
 {
-	if (s->error == STR_MEM_FREED)
-		return;
-	free(s->data);
-	*s = (strbuf){ .error = STR_MEM_FREED };
+	strbuf *tmp = *s;
+	/* free(NULL) is defined */
+	free(tmp->data);
+	free(tmp);
+	*s = NULL;
 }
 
 void strbuf_insert(strbuf *s, str t, isize pos)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	isize old_size = s->size;
@@ -156,7 +177,7 @@ void strbuf_insert(strbuf *s, str t, isize pos)
 	if (new_size > s->capacity) {
 		/* allocate MEMORY_SCALE_FACTORx more memory than needed */
 		strbuf_resize(s, new_size * MEMORY_SCALE_FACTOR);
-		if (s->error)
+		if (s == NULL || s->error)
 			return;
 	}
 
@@ -172,7 +193,7 @@ void strbuf_insert(strbuf *s, str t, isize pos)
 
 void strbuf_remove(strbuf *s, isize start, isize end)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 	if (!str_is_valid_range(s->size, start, end)) {
 		s->error = STR_INVALID_INDEX;
@@ -190,7 +211,7 @@ void strbuf_remove(strbuf *s, isize start, isize end)
 
 void strbuf_lstrip(strbuf *s, str substr)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	str tmp = str_lstrip(strbuf_to_str(s), substr);
@@ -199,7 +220,7 @@ void strbuf_lstrip(strbuf *s, str substr)
 
 void strbuf_rstrip(strbuf *s, str substr)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	str tmp = str_rstrip(strbuf_to_str(s), substr);
@@ -214,7 +235,7 @@ void strbuf_strip(strbuf *s, str substr)
 
 void strbuf_replace(strbuf *s, str old, str new)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	isize substr_start = strbuf_find_first(s, old);
@@ -237,7 +258,7 @@ void strbuf_prepend(strbuf *s, str t)
 
 void strbuf_reverse(strbuf *s)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	for (isize i = 0; i < s->size / 2; i++) {
@@ -249,7 +270,7 @@ void strbuf_reverse(strbuf *s)
 
 void strbuf_to_upper(strbuf *s)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	for (isize i = 0; i < s->size; i++) {
@@ -260,7 +281,7 @@ void strbuf_to_upper(strbuf *s)
 
 void strbuf_to_lower(strbuf *s)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	for (isize i = 0; i < s->size; i++) {
@@ -271,7 +292,7 @@ void strbuf_to_lower(strbuf *s)
 
 void strbuf_print(strbuf const *s)
 {
-	if (s->error)
+	if (s == NULL || s->error)
 		return;
 
 	for (isize i = 0; i < s->size; i++)
