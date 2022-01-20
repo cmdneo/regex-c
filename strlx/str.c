@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "strlx/strlx.h"
 
 str cstr(char const *s)
@@ -10,7 +12,7 @@ str cstr(char const *s)
 
 str str_substr(str s, isize start, isize end)
 {
-	if (!str_is_valid_range(s.size, start, end))
+	if (!strlx_is_valid_range(s.size, start, end))
 		return (str){ 0 };
 
 	return (str){
@@ -40,6 +42,9 @@ isize str_cmp(str s, str t)
 
 isize str_find_first(str s, str t)
 {
+	if (t.size > s.size)
+		return -1;
+
 	isize ncmps = s.size - t.size + 1;
 	for (isize i = 0; i < ncmps; i++) {
 		isize cmp_result = str_cmp(str_substr(s, i, i + t.size), t);
@@ -47,11 +52,14 @@ isize str_find_first(str s, str t)
 			return i;
 	}
 
-	return -t.size;
+	return -1;
 }
 
 isize str_find_last(str s, str t)
 {
+	if (t.size > s.size)
+		return -1;
+
 	isize ncmps = s.size - t.size + 1;
 	for (isize i = ncmps - 1; i >= 0; i--) {
 		isize cmp_result = str_cmp(str_substr(s, i, i + t.size), t);
@@ -59,11 +67,14 @@ isize str_find_last(str s, str t)
 			return i;
 	}
 
-	return -t.size;
+	return -1;
 }
 
 isize str_count(str s, str t)
 {
+	if (t.size > s.size)
+		return -1;
+
 	isize count = 0;
 	isize t_at = str_find_first(s, t);
 	while (t_at >= 0) {
@@ -75,19 +86,34 @@ isize str_count(str s, str t)
 	return count;
 }
 
+int str_has_char(str s, char c)
+{
+	for (isize i = 0; i < s.size; i++)
+		if (s.data[i] == c)
+			return 1;
+
+	return 0;
+}
+
 int str_starts_with(str s, str t)
 {
+	if (t.size > s.size)
+		return 0;
+
 	return str_cmp(str_substr(s, 0, t.size), t) == 0;
 }
 
 int str_ends_with(str s, str t)
 {
+	if (t.size > s.size)
+		return 0;
+
 	return str_cmp(str_substr(s, s.size - t.size, s.size), t) == 0;
 }
 
 str str_lstrip(str s, str t)
 {
-	if (t.size == 0)
+	if (t.size == 0 || t.size > s.size)
 		return s;
 
 	str ret = s;
@@ -99,7 +125,7 @@ str str_lstrip(str s, str t)
 
 str str_rstrip(str s, str t)
 {
-	if (t.size == 0)
+	if (t.size == 0 || t.size > s.size)
 		return s;
 
 	str ret = s;
@@ -111,6 +137,9 @@ str str_rstrip(str s, str t)
 
 str str_strip(str s, str t)
 {
+	if (t.size == 0 || t.size > s.size)
+		return s;
+
 	str ret = s;
 	ret = str_lstrip(ret, t);
 	ret = str_rstrip(ret, t);
@@ -120,9 +149,11 @@ str str_strip(str s, str t)
 
 str str_pop_first_split(str *s, str split_by)
 {
+	assert(s);
+
 	isize first_at = str_find_first(*s, split_by);
 	str ret = { .data = s->data, .size = first_at };
-	/* Return string with size=0 if seperator NOT found */
+	/* Return full string and set s to empty string if seperator NOT found */
 	if (first_at < 0) {
 		ret.size = s->size;
 		s->size = 0;
