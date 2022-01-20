@@ -109,7 +109,7 @@ void strlx_show_error(enum strlx_error error);
 
 /* -- Macros -- */
 
-#define strbuf_from(any)                                          \
+#define strbuf_from(any)                                                       \
 	_Generic((any),                    \
 	int: strbuf_from_cap,              \
 	unsigned int: strbuf_from_cap,     \
@@ -128,13 +128,14 @@ void strlx_show_error(enum strlx_error error);
 /* -- Constants -- */
 
 static const str STR_DIGITS = M_str("0123456789");
-static const str STR_LOWERCASE = M_str("abcdefghijklmnopqrstuvwxyz");
-static const str STR_UPPERCASE = M_str("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-static const str STR_LETTERS = M_str("abcdefghijklmnopqrstuvwxyz"
-				     "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-static const str STR_WHITESPACES = M_str(" \t\r\n\f\v");
-static const str STR_ALNUM = M_str("0123456789"
-				   "abcdefghijklmnopqrstuvwxyz"
-				   "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	static const str STR_LOWERCASE = M_str("abcdefghijklmnopqrstuvwxyz");
+	static const str STR_UPPERCASE = M_str("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	static const str STR_LETTERS = M_str("abcdefghijklmnopqrstuvwxyz"
+					     "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	static const str STR_WHITESPACES = M_str(" \t\r\n\f\v");
+	static const str STR_ALNUM = M_str("0123456789"
+					   "abcdefghijklmnopqrstuvwxyz"
+					   "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	static const str STR_NUL = M_str("\0");
 
 #endif /* END strlx/strlx.h */

@@ -6,8 +6,14 @@
 
 enum strbuf_default {
 	STRBUF_INIT_CAP = 8,
-	MEMORY_SCALEX = 2,
 };
+
+static inline isize get_next_cap(isize cap)
+{
+	if (cap < 2)
+		cap = 2;
+	return cap + cap / 2;
+}
 
 static inline strbuf *strbuf_create_cap0()
 {
@@ -27,7 +33,7 @@ static void strbuf_shift(strbuf *s, isize offset, isize shift_by)
 	if (shift_by == 0)
 		return;
 	if (shift_by > 0 && (s->cap < s->size + shift_by)) {
-		strbuf_resize(s, s->cap * MEMORY_SCALEX);
+		strbuf_resize(s, get_next_cap(s->cap));
 		if (s->error)
 			return;
 	}
@@ -103,7 +109,7 @@ strbuf *strbuf_from_file(FILE *f)
 			continue;
 		}
 
-		isize new_capacity = size * MEMORY_SCALEX;
+		isize new_capacity = get_next_cap(ret->cap);
 		strbuf_resize(ret, new_capacity);
 		if (ret->error)
 			break;
@@ -215,8 +221,8 @@ void strbuf_resize(strbuf *s, isize new_capacity)
 
 void strbuf_destroy(strbuf **s)
 {
-	strbuf *tmp = *s;
 	assert(s);
+	strbuf *tmp = *s;
 	assert(tmp);
 	assert(tmp->data);
 
