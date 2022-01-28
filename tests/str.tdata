@@ -1,47 +1,434 @@
+# TDD............. auto-testing
+# For generating tests use command (paths are relative)
+# python3 gentests.py             \
+#     -I "strlx/strlx.h"          \
+#     -i "tests/str.tdata"        \
+#     -o "build/teststest-strlx.c"
+#
+# Output file at: build/tests/test-strlx.c
+# ========================================================================== #
+
+# Begin testing for str functions
+
+=> cstr
+<%
+	char*$tmp0 = $s;
+	str $tmp1 = cstr($tmp0);
+	result = $tmp1.size == $exp_size && $tmp1.data == $tmp0; 
+%>
+:s                     exp_size
+"ABCDEFG"                 7
+""                        0
+
+=> str_substr
+<%
+	char*$tmp0 = $s;
+	str $tmp1 = str_substr(cstr($tmp0), $start, $end);
+	result = $exp_size == $tmp1.size; 
+%>
+:s                start end   exp_size
+"AB CD EFGH"        3    5       2
+"ABCD"              1    1       0
+"ABCD"              0    -1      0
+"ABCD"              -10  999     4
+
+=> str_cmp: equal
+<%
+	result = str_cmp(cstr($s), cstr($t)) == 0;
+%>
+:s                  t
+"Hello"          "Hello"
+""                 ""
+
+=> str_cmp: not equal
+<%
+	result = str_cmp(cstr($s), cstr($t)) != 0;
+%>
+:s               t
+"abcd"           "ab"
+"abcd"           "cd"
+"abcd"           "  abcd"
+"abcd"           "abcd    "
+"ab"             "abcd"
+"cd"             "abcd"
+"abcdefghi"      "ghi"
+"abcdefghihgyu6" "ghi"
+"ghi"            "abcghijwfs"
+"abdd"           "aBdd"
+""               "  "
+""               "full"
+"full"           ""
+
+=> str_cmp_case: equal
+<%
+	result = str_cmp_case(cstr($s), cstr($t)) == 0;
+%>
+:s          t
+"AbcdE"     "abcde"
+"abc"       "abc"
+"abdd"      "aBdd"
+
+
+=> str_find_first
+<%
+	result = str_find_first(cstr($s), cstr($find_me)) == $exp_idx;
+%>
+:s                 find_me      exp_idx
+"abcdabbcaab"      "ab"         0
+"abcddsfifcdw8cd"  "cd"         2
+"12345678 1288"    "8"          7
+"1"                "1234"      -1
+""                "1234"       -1
+
+=> str_find_last
+<%
+	result = str_find_last(cstr($s), cstr($find_me)) == $exp_idx;
+%>
+:s                   find_me        exp_idx
+"abcdabbcaab"        "ab"           9
+"abcddsfifcdw8cd"    "cd"           13
+"12345678 1288"      "8"            12
+"1"                  "12"          -1
+"1"                  "12"          -1
+
+
+=> str_count
+<%
+	result = str_count(cstr($s), cstr($t)) == $exp; 
+%>
+:s                   t         exp
+"ABCABCDEFGHIAB"     "AB"          3
+"ABCDEF"              "XYZ"        0
+
+=> str_has_char
+<%
+	result = str_has_char(cstr($s), $c) == $exp;
+%>
+:s          c    exp
+"abcd"      'b'  1
+"abcd"      'x'  0
+
+=> str_has_char_case
+<%
+	result = str_has_char_case(cstr($s), $c) == $exp;
+%>
+:s          c    exp
+"abcd"      'B'  1
+"abcd"      'b'  1
+"abcd"      'X'  0
+
+
+=> str_starts_with
+<%
+	result = str_starts_with(cstr($s), cstr($starting)) == $exp;
+%>
+:s               starting   exp
+"Apple"          "App"      1
+"Apple"          ""         1
+"Apple"          " "        0
+"ss"            "abcf"      0
+""              "abcf"      0
+
+=> str_starts_with_case
+<%
+	result = str_starts_with_case(cstr($s), cstr($starting)) == $exp;
+%>
+:s               starting   exp
+"Apple"          "APP"      1
+"Apple"          ""         1
+"Apple"          " "        0
+"ss"            "abcf"      0
+""              "abcf"      0
+
+=> str_ends_with
+<%
+	result = str_ends_with(cstr($s), cstr($ending)) == $exp;
+%>
+:s               ending      exp
+"Apple"          "le"        1
+"Apple"          ""          1
+"Apple"          " "         0
+"ss"            "abc"        0
+""              "abc"        0
+
+=> str_ends_with_case
+<%
+	result = str_ends_with_case(cstr($s), cstr($ending)) == $exp;
+%>
+:s               ending      exp
+"Apple"          "pLe"       1
+"Apple"          ""          1
+"Apple"          " "         0
+"ss"            "abc"        0
+""              "abc"        0
+
+=> str_lstrip
+<%
+	str $tmp0 = str_lstrip(cstr($strip_me), cstr($strip_ends));
+	result = str_cmp($tmp0, cstr($exp)) == 0;
+%>
+:strip_me            strip_ends   exp
+"ABAB STUFF ABAB"    "AB"         " STUFF ABAB"
+"FRONTMATTER"        "FRONT"      "MATTER"
+"MATTERBACK"         "BACK"       "MATTERBACK"
+"NO Strip"           ""           "NO Strip"
+"COMPLETE set"       "unexist"    "COMPLETE set"
+"short"              "longlong"   "short"
+""                   "ffef"       ""
+
+=> str_rstrip
+<%
+	str $tmp0 = str_rstrip(cstr($strip_me), cstr($strip_ends));
+	result = str_cmp($tmp0, cstr($exp)) == 0;
+%>
+:strip_me            strip_ends   exp
+"ABAB STUFF ABAB"    "AB"         "ABAB STUFF "
+"FRONTMATTER"        "FRONT"      "FRONTMATTER"
+"MATTERBACK"         "BACK"       "MATTER"
+"NO Strip"           ""           "NO Strip"
+"COMPLETE set"       "unexist"    "COMPLETE set"
+"short"              "longlong"   "short"
+""                   "ffef"       ""
+
 => str_strip
 <%
-	str $tmp0 = cstr($strip_me);
-	$tmp0 = str_strip($tmp0, cstr($strip_ends));
-	result = str_cmp($tmp0, cstr($expected)) == 0;
-
+	str $tmp0 = str_strip(cstr($strip_me), cstr($strip_ends));
+	result = str_cmp($tmp0, cstr($exp)) == 0;
 %>
-:strip_me            strip_ends   expected
-"ABAB STUFF ABAB"      "AB"      " STUFF "
-"FRONTMATTER"          "FRONT"   "MATTER"
-"MATTERBACK"           "BACK"    "MATTER"
+:strip_me            strip_ends   exp
+"ABAB STUFF ABAB"    "AB"         " STUFF "
+"FRONTMATTER"        "FRONT"      "MATTER"
+"MATTERBACK"         "BACK"       "MATTER"
+"NO Strip"           ""           "NO Strip"
+"COMPLETE set"       "unexist"    "COMPLETE set"
+"short"              "longlong"   "short"
+""                   "ffef"       ""
 
+=> str_pop_first_split
+<%
+	str $tmp0 = cstr($s);
+	str $tmp1 = str_pop_first_split(&$tmp0, cstr($sep));
+	result = str_cmp($tmp1, cstr($exp_sub)) == 0 &&
+			 str_cmp($tmp0, cstr($exp_rem)) == 0;
+%>
+:s                 sep        exp_sub        exp_rem
+"axz/:/b/:/c"      "/:/"      "axz"          "b/:/c"
+"/:/b/:/c"         "/:/"      ""             "b/:/c"
+"abcdef"           ","        "abcdef"       "" 
+"ab123cd"          ""         ""             "ab123cd"
+"ab:|:cd:|:dee"    ":|:"      "ab"           "cd:|:dee"
+"::abcd"           "::"       ""             "abcd"
+"a:b"              "abcdef"   "a:b"          ""
+""                 ""         ""             ""
+
+=> str_to_ll
+<%
+	long long $tmp0 = 0;
+	result = str_to_ll(cstr($s), $base, &$tmp0) == $ret;
+	result = result && ($tmp0 == $exp);
+%>
+:s             base exp     ret
+"0x999"        16   0x999   5
+"+0x999"       16   0x999   6
+"-0x999"       16   -0x999  6
+"999"          16   0x999   3
+"+999"         16   0x999   4
+"-999"         16   -0x999  4
+"12349"        10   12349   5
+"+12349"       10   12349   6
+"-12349"       10   -12349  6
+"+0b100"       2    4       6
+"0b100"        2    4       5
+"-0b100"       2    -4      6
+"+100"         2    4       4
+"100"          2    4       3
+"-100"         2    -4      4
+"z"            36   35      1
+# Not fully valid numbers
+"100x10"       10   100     3
+"-0x"          16   0       2
+"- 12"         10   0       0
+"-0x "         16   0       2
+"    "         10   0       0
+" -  "         10   0       1
+" - 11 "       10   0       1
+
+
+# Begin testing for strbuf functions
+=> strbuf_from: cap
+<%
+	strbuf *$tmp0 = strbuf_from($cap);
+	result = $tmp0->data != NULL && $tmp0->size == 0 && $tmp0->cap == $cap;
+	strbuf_destroy(&$tmp0);
+%>
+:cap
+8  
+
+=> strbuf_from: str
+<%
+	char*$tmp0 = $s;
+	strbuf *$tmp1 = strbuf_from(cstr($tmp0));
+	result = $tmp1->size == $exp && $tmp1->data != NULL && $tmp1->data != $tmp0;
+	strbuf_destroy(&$tmp1);
+%>
+:s          exp
+"ABCD"      4
+
+=> strbuf_from: cstr
+<%
+	char*$tmp0 = $s;
+	strbuf *$tmp1 = strbuf_from($tmp0);
+	result = $tmp1->size == $exp && $tmp1->data != NULL && $tmp1->data != $tmp0;
+	strbuf_destroy(&$tmp1);
+%>
+:s          exp
+"ABCD"      4
+
+=> strbuf_from: copy strbuf
+<%
+	char*$tmp2 = $s;
+	strbuf *$tmp0 = strbuf_from($tmp2);
+	strbuf *$tmp1 = strbuf_copy($tmp0);
+	result = $tmp0->data != $tmp2 &&
+	         $tmp1->data != $tmp2 &&
+	         $tmp0->data != $tmp1->data &&
+	         $tmp0->size == $tmp1->size &&
+	         strbuf_cmp2($tmp0, $tmp1) == 0;
+	strbuf_destroy(&$tmp0);
+	strbuf_destroy(&$tmp1);
+%>
+:s
+"abcdefghijklmnopqrstuvexyz"
+"long string n fuzzzz....je98whreu980ru3r3"
+"meh.......!??\nhem......."
+
+# strbuf_from_file not easily testable here <=
+
+=> strbuf_substr
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	str $tmp1 = strbuf_substr($tmp0, $start, $end);
+	result = $tmp1.size == $exp_size;
+	strbuf_destroy(&$tmp0);
+%>
+:s              start end exp_size
+"abcdefghi"     0     2   2
+"abc"           0     999 3
+"abc"           2     0   0
+"abc"           -1    2   2
+"ABCD"          0    -1   0
+
+=> strbuf_to_str
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	str $tmp1 = strbuf_to_str($tmp0);
+	result = $tmp1.size == $tmp0->size && $tmp0->data == $tmp1.data;
+	strbuf_destroy(&$tmp0);
+%>
+:s
+"abcdefghi"
+
+# FUNCTIONS:
+# strbuf_cmp, strbuf_cmp2, strbuf_find_first, strbuf_find_last, strbuf_count.
+# Just convert strbuf to str and directly call the corresponding str functions
+# Which have already been tested, so need not to test these.
+
+=> strbuf_destroy
+<%
+	strbuf *$tmp0 = strbuf_from_cap(4096);
+	strbuf_destroy(&$tmp0);
+	result = $tmp0 == NULL;
+%>
+:__placeholder__
+"__placeholder__"
+
+# TODO => strbuf_insert
 
 => strbuf_remove
 <%
-	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
-	strbuf_remove(&$tmp0, $start, $end);
-	result = str_cmp(cstr($expected), strbuf_to_str(&$tmp0)) == 0;
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_remove($tmp0, $start, $end);
+	result = str_cmp(cstr($exp), strbuf_to_str($tmp0)) == 0;
 	strbuf_destroy(&$tmp0);
 %>
-:s         start end         expected
+:s        start end         exp
 "NexT"    1     3           "NT"
 "NexT"    1     4           "N"
-"DOnt remove" 1 1 "DOnt remove"
+"DOnt~~~" 1     1           "DOnt~~~"
 
 => strbuf_append
 <%
-	strbuf $tmp0 = strbuf_create_from_str(cstr($s));
-	strbuf_append(&$tmp0, cstr($append_this));
-	result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_append($tmp0, cstr($append_this));
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
 	strbuf_destroy(&$tmp0);
 %>
-:s         append_this     expected
-"hello, "     "world"      "hello, world"
-"123"         "456"         "123456"
+:s         append_this     exp
+"hello,"   "world"         "hello,world"
+"123"      "456"           "123456"
+"all"      ""              "all"
+""         "allon"         "allon"
+""         ""              ""
+
+=> strbuf_prepend
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_prepend($tmp0, cstr($prepend_this));
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:s         prepend_this     exp
+"hello,"     "world"       "worldhello,"
+"123"         "456"        "456123"
+"all"          ""          "all"
+""            "allon"      "allon"
+""            ""           ""
+
+=> strbuf_ljust
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_ljust($tmp0, $fill, $width);
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:s          fill width exp
+"xdws"      '-'  6    "--xdws"
+"aaaaa"     'x'  1    "aaaaa"
+
+=> strbuf_rjust
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_rjust($tmp0, $fill, $width);
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:s          fill width exp
+"adws"      'a'  6    "adwsaa"
+"aaaaa"     'x'  1    "aaaaa"
+
+=> strbuf_center
+<%
+	strbuf *$tmp0 = strbuf_from($s);
+	strbuf_center($tmp0, $fill, $width);
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:s          fill width  exp
+"adws"      '-'  6      "-adws-"
+"a"         '-'  4      "-a--"
+"aaaaa"     'x'  1      "aaaaa"
+
 
 => strbuf_strip
 <%
-	strbuf $tmp0 = strbuf_create_from_str(cstr($strip_me));
-	strbuf_strip(&$tmp0, cstr($strip_this));
-	result = strbuf_cmp(&$tmp0, cstr($expected)) == 0;
+	strbuf *$tmp0 = strbuf_from($strip_me);
+	strbuf_strip($tmp0, cstr($strip_this));
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
 	strbuf_destroy(&$tmp0);
 %>
-:strip_me             strip_this  expected
+:strip_me             strip_this  exp
 "ABAB STUFF ABAB"      "AB"      " STUFF "
 "FRONTMATTER"          "FRONT"   "MATTER"
 "MATTERBACK"           "BACK"    "MATTER"
+"COMPLETE set"         "unexist" "COMPLETE set"
+"cAse sensetive"       "case"    "cAse sensetive"

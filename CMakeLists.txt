@@ -15,34 +15,39 @@ else()
 	add_compile_options(-Wall -Wextra -Wnull-dereference -Wshadow -Wformat=2 -pedantic)
 endif()
 
+include_directories("${CMAKE_SOURCE_DIR}/include")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-include_directories("${CMAKE_SOURCE_DIR}/include")
-add_library(strlx strlx/str.c strlx/strbuf.c strlx/common.c strlx/fmt.c)
-add_library(re re/re.c)
-add_library(regex INTERFACE)
-target_link_libraries(regex INTERFACE re strlx)
+# set(PUBLIC_HEADERS "strlx/strlx.h" "regex/regex.h" "regex/errors.h")
+set(STRLX_SRCS "strlx/str.c" "strlx/strbuf.c" "strlx/common.c")
+# set(REGEX_SRCS "regex/dsa.c" "regex/parser.c")
+
+add_library(strlx ${STRLX_SRCS})
+# add_library(regex ${STRLX_SRCS} ${REGEX_SRCS})
 
 # Start testing
 include(CTest)
-set(TESTS_DIR "${CMAKE_SOURCE_DIR}/tests")
-set(CODEGEN_DIR "${CMAKE_BINARY_DIR}/tests")
 
-# Add test for str library
+# TEST strlx library
+set(STRLX_TEST_SRC "${CMAKE_BINARY_DIR}/tests/test-strlx.c")
 add_custom_command(
-	OUTPUT "${CODEGEN_DIR}/test-strlx.c"
-	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-	COMMAND /usr/bin/python3 "${CMAKE_SOURCE_DIR}/gentests.py"
-		--tests "${TESTS_DIR}"
-		--codegen "${CODEGEN_DIR}"
+	OUTPUT ${STRLX_TEST_SRC}
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+	COMMAND /usr/bin/python3 "gentests.py"
 		-I "strlx/strlx.h"
-		-i "str.tdata"
-		-o "test-strlx.c"
-	DEPENDS "${TESTS_DIR}/str.tdata"
+		-i "tests/str.tdata"
+		-o ${STRLX_TEST_SRC}
+	DEPENDS "tests/str.tdata"
 )
-add_executable(test-strlx "${CODEGEN_DIR}/test-strlx.c")
-target_link_libraries(test-strlx regex)
-add_test(NAME "test-strlx" COMMAND test-strlx)
-set_tests_properties(test-strlx PROPERTIES TIMEOUT 5)
+add_executable(test-strlx ${STRLX_TEST_SRC})
+target_link_libraries(test-strlx strlx)
+add_test(NAME test-strlx COMMAND test-strlx)
+
+# TEST regex library
+# add_executable(test-regex tests/test-regex.c)
+# target_link_libraries(test-regex regex)
+# add_test(NAME test-regex COMMAND test-regex)
+
+# set_tests_properties(test-strlx test-regex PROPERTIES TIMEOUT 5)
