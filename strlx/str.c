@@ -1,6 +1,17 @@
+#include <inttypes.h>
 #include <assert.h>
 
 #include "strlx/strlx.h"
+
+static const char DIG_VAL[] = {
+	['0'] = 0,  ['1'] = 1,	['2'] = 2,  ['3'] = 3,	['4'] = 4,  ['5'] = 5,
+	['6'] = 6,  ['7'] = 7,	['8'] = 8,  ['9'] = 9,	['A'] = 10, ['B'] = 11,
+	['C'] = 12, ['D'] = 13, ['E'] = 14, ['F'] = 15, ['G'] = 16, ['H'] = 17,
+	['I'] = 18, ['J'] = 19, ['K'] = 20, ['L'] = 21, ['M'] = 22, ['N'] = 23,
+	['O'] = 24, ['P'] = 25, ['Q'] = 26, ['R'] = 27, ['S'] = 28, ['T'] = 29,
+	['U'] = 30, ['V'] = 31, ['W'] = 32, ['X'] = 33, ['Y'] = 34, ['Z'] = 35,
+};
+static const str STR_DIGS_36 = M_str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
 str cstr(char const *s)
 {
@@ -12,8 +23,7 @@ str cstr(char const *s)
 
 str str_substr(str s, isize start, isize end)
 {
-	if (!strlx_is_valid_range(s.size, start, end))
-		return (str){ 0 };
+	strlx_adjust_range(s.size, &start, &end);
 
 	return (str){
 		.size = end - start,
@@ -28,6 +38,25 @@ isize str_cmp(str s, str t)
 
 	for (isize i = 0; i < min_size; i++) {
 		ret = s.data[i] - t.data[i];
+		if (ret != 0)
+			break;
+	}
+
+	if (s.size > t.size)
+		ret = s.data[0];
+	else if (s.size < t.size)
+		ret = -t.data[0];
+
+	return ret;
+}
+
+isize str_cmp_case(str s, str t)
+{
+	isize min_size = s.size < t.size ? s.size : t.size;
+	isize ret = 0;
+
+	for (isize i = 0; i < min_size; i++) {
+		ret = strlx_to_lower(s.data[i]) - strlx_to_lower(t.data[i]);
 		if (ret != 0)
 			break;
 	}
@@ -95,20 +124,44 @@ int str_has_char(str s, char c)
 	return 0;
 }
 
+int str_has_char_case(str s, char c)
+{
+	c = strlx_to_lower(c);
+	for (isize i = 0; i < s.size; i++)
+		if (strlx_to_lower(s.data[i]) == c)
+			return 1;
+
+	return 0;
+}
+
 int str_starts_with(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;
-
 	return str_cmp(str_substr(s, 0, t.size), t) == 0;
+}
+
+int str_starts_with_case(str s, str t)
+{
+	if (t.size > s.size)
+		return 0;
+
+	return str_cmp_case(str_substr(s, 0, t.size), t) == 0;
 }
 
 int str_ends_with(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;
-
 	return str_cmp(str_substr(s, s.size - t.size, s.size), t) == 0;
+}
+
+int str_ends_with_case(str s, str t)
+{
+	if (t.size > s.size)
+		return 0;
+
+	return str_cmp_case(str_substr(s, s.size - t.size, s.size), t) == 0;
 }
 
 str str_lstrip(str s, str t)
@@ -164,6 +217,64 @@ str str_pop_first_split(str *s, str split_by)
 	s->size -= first_at + split_by.size;
 
 	return ret;
+}
+
+isize str_to_ll(str s, int base, long long *num)
+{
+	assert(num);
+	assert(2 <= base && base <= 36);
+
+	static const str bin_pref = M_str("0b");
+	static const str hex_pref = M_str("0x");
+
+	*num = 0;
+	long long mul = 1;
+	isize start = s.size;
+	isize end = 0;
+	str digs = str_substr(STR_DIGS_36, 0, base);
+
+	for (isize i = 0; i < s.size; i++) {
+		if (!strlx_is_space(s.data[i])) {
+			start = i;
+			break;
+		}
+	}
+
+	/* String is only whitespaces */
+	if (start == s.size)
+		return 0;
+
+	if (s.data[start] == '-') {
+		start++;
+		mul = -1;
+	} else if (s.data[start] == '+')
+		start++;
+	/* If only sign is present => INVALID */
+	if (start == s.size)
+		return start - 1;
+
+	if (base == 2 &&
+	    str_starts_with_case(str_substr(s, start, s.size), bin_pref))
+		start += 2;
+	else if (base == 16 &&
+		 str_starts_with_case(str_substr(s, start, s.size), hex_pref))
+		start += 2;
+
+	for (end = start; end < s.size; end++) {
+		if (!str_has_char_case(digs, s.data[end]))
+			break;
+	}
+
+	/* If no digits after SIGN or after SIGN AND PREFIX => INVALID */
+	if (end == start)
+		return start - 1;
+
+	for (isize i = end - 1; i >= start; i--) {
+		*num += mul * DIG_VAL[(int)strlx_to_upper(s.data[i])];
+		mul *= base;
+	}
+
+	return end;
 }
 
 void str_print(str s)
