@@ -4,7 +4,7 @@
 
 #include "strlx/strlx.h"
 
-#define assert_strbuf(s)                                                       \
+#define assert_strbuf(s) \
 	(assert((s)), assert((s)->data), assert((s)->size <= (s)->cap))
 
 enum strbuf_default {
@@ -110,22 +110,22 @@ strbuf *strbuf_from_file(FILE *f, char end)
 		return NULL;
 
 	int c;
-	isize size;
-	for (size = 0; (c = fgetc(f)) != EOF && c != end; size++) {
-		if (ret->cap >= size) {
-			ret->data[size - 1] = c;
-			ret->size = size;
+	for (isize i = 0; (c = fgetc(f)) != EOF && c != end; i++) {
+		ret->size = i + 1;
+
+		if (ret->cap >= i) {
+			ret->data[i] = c;
 			continue;
 		}
 
-		isize new_cap = next_cap(ret->cap);
-		strbuf_resize(ret, new_cap);
-		if (ret->error)
-			break;
+		strbuf_resize(ret, next_cap(ret->cap));
+		if (ret->error) {
+			strbuf_destroy(&ret);
+			return NULL;
+		}
 
-		ret->data[size] = c;
+		ret->data[i] = c;
 	}
-	ret->size = size;
 
 	assert_strbuf(ret);
 	return ret;
@@ -439,6 +439,13 @@ void strbuf_to_lower(strbuf *s)
 		s->data[i] = strlx_to_lower(s->data[i]);
 
 	assert_strbuf(s);
+}
+
+isize strbuf_to_ll(strbuf const *s, int base, long long *num)
+{
+	assert_strbuf(s);
+
+	return str_to_ll(strbuf_to_str(s), base, num);
 }
 
 void strbuf_print(strbuf const *s)

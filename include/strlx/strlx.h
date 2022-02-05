@@ -32,10 +32,10 @@ typedef struct str {
 } str;
 
 /** Creates str from C-string literal, useful for consts */
-#define M_str(string_literal)                                                  \
-	((str){                                                                \
-		.data = (string_literal),                                      \
-		.size = (sizeof(string_literal) - 1),                          \
+#define M_str(string_literal)                         \
+	((str){                                       \
+		.data = (string_literal),             \
+		.size = (sizeof(string_literal) - 1), \
 	})
 
 str cstr(char const *s);
@@ -43,6 +43,14 @@ str str_substr(str s, isize start, isize end);
 
 isize str_cmp(str s, str t);
 isize str_cmp_case(str s, str t);
+/**
+ * @brief Reverses s then compares s and t
+ * 
+ * @param s
+ * @param t
+ * @return int Number of characters matched
+ */
+isize str_cmp_rev(str s, str t);
 
 isize str_find_first(str s, str t);
 isize str_find_last(str s, str t);
@@ -72,6 +80,7 @@ str str_strip(str s, str t);
  * @return str the popped substring
  */
 str str_pop_first_split(str *s, str split_by);
+
 /**
  * @brief Converts str to long long int.
  * str can be have any number of leading whitespaces, can be prefixed with
@@ -82,7 +91,7 @@ str str_pop_first_split(str *s, str split_by);
  * 
  * @param s 
  * @param base one of 2-36 (inclusive)
- * @param num Pointer to where number will be stored
+ * @param num Pointer to where the number will be stored
  * @return isize Index of the first illegal char. (s.size on success)
  */
 isize str_to_ll(str s, int base, long long *num);
@@ -131,6 +140,16 @@ void strbuf_center(strbuf *s, char fill, isize width);
 void strbuf_reverse(strbuf *s);
 void strbuf_to_upper(strbuf *s);
 void strbuf_to_lower(strbuf *s);
+
+/**
+ * @brief Converts str to long long, strbuf wrapper for str_to_ll.
+ * 
+ * @param s 
+ * @param base one of 2-36 (inclusive)
+ * @param num Pointer to where the number will be stored
+ * @return isize Index of the first illegal char. (s->size on success)
+ */
+isize strbuf_to_ll(strbuf const *s, int base, long long *num);
 void strbuf_print(strbuf const *s);
 
 /* Common Functions */
@@ -141,7 +160,7 @@ void strlx_show_error(enum strlx_error error);
 
 /* -- Macros -- */
 
-#define strbuf_from(any)                                                       \
+#define strbuf_from(any) \
 	_Generic((any),                    \
 	int: strbuf_from_cap,              \
 	/* Here isize is long int */       \

@@ -3,7 +3,7 @@
 
 #include "strlx/strlx.h"
 
-static const char DIG_VAL[] = {
+static const char DIG_VALS[] = {
 	['0'] = 0,  ['1'] = 1,	['2'] = 2,  ['3'] = 3,	['4'] = 4,  ['5'] = 5,
 	['6'] = 6,  ['7'] = 7,	['8'] = 8,  ['9'] = 9,	['A'] = 10, ['B'] = 11,
 	['C'] = 12, ['D'] = 13, ['E'] = 14, ['F'] = 15, ['G'] = 16, ['H'] = 17,
@@ -11,7 +11,12 @@ static const char DIG_VAL[] = {
 	['O'] = 24, ['P'] = 25, ['Q'] = 26, ['R'] = 27, ['S'] = 28, ['T'] = 29,
 	['U'] = 30, ['V'] = 31, ['W'] = 32, ['X'] = 33, ['Y'] = 34, ['Z'] = 35,
 };
-static const str STR_DIGS_36 = M_str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+static const str STR_DIGS_B36 = M_str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+static inline min(isize a, isize b)
+{
+	return a < b ? a : b;
+}
 
 str cstr(char const *s)
 {
@@ -33,7 +38,7 @@ str str_substr(str s, isize start, isize end)
 
 isize str_cmp(str s, str t)
 {
-	isize min_size = s.size < t.size ? s.size : t.size;
+	isize min_size = min(s.size, t.size);
 	isize ret = 0;
 
 	for (isize i = 0; i < min_size; i++) {
@@ -52,7 +57,7 @@ isize str_cmp(str s, str t)
 
 isize str_cmp_case(str s, str t)
 {
-	isize min_size = s.size < t.size ? s.size : t.size;
+	isize min_size = min(s.size, t.size);
 	isize ret = 0;
 
 	for (isize i = 0; i < min_size; i++) {
@@ -65,6 +70,21 @@ isize str_cmp_case(str s, str t)
 		ret = s.data[0];
 	else if (s.size < t.size)
 		ret = -t.data[0];
+
+	return ret;
+}
+
+isize str_cmp_rev(str s, str t)
+{
+	isize ret = 0;
+	isize size = s.size < t.size ? s.size : t.size;
+
+	for (isize i = 0; i < size; i++) {
+		if (s.data[s.size - i - 1] == t.data[i])
+			ret++;
+		else
+			break;
+	}
 
 	return ret;
 }
@@ -231,7 +251,7 @@ isize str_to_ll(str s, int base, long long *num)
 	long long mul = 1;
 	isize start = s.size;
 	isize end = 0;
-	str digs = str_substr(STR_DIGS_36, 0, base);
+	str digs = str_substr(STR_DIGS_B36, 0, base);
 
 	for (isize i = 0; i < s.size; i++) {
 		if (!strlx_is_space(s.data[i])) {
@@ -270,7 +290,7 @@ isize str_to_ll(str s, int base, long long *num)
 		return start - 1;
 
 	for (isize i = end - 1; i >= start; i--) {
-		*num += mul * DIG_VAL[(int)strlx_to_upper(s.data[i])];
+		*num += mul * DIG_VALS[(int)strlx_to_upper(s.data[i])];
 		mul *= base;
 	}
 

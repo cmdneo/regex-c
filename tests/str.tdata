@@ -68,6 +68,16 @@
 "abc"       "abc"
 "abdd"      "aBdd"
 
+=> str_cmp_rev
+<%
+	result = str_cmp_rev(cstr($a), cstr($b)) == $n;
+%>
+:a           b        n
+"bbaaa"      "aac"    2
+"bbaa"       "aaac"   2
+"bbaa"       "cca"    0
+"aabb"       "cca"    0
+"aaaaa"      "aaaaa"  5
 
 => str_find_first
 <%
