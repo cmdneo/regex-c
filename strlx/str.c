@@ -13,7 +13,7 @@ static const char DIG_VALS[] = {
 };
 static const str STR_DIGS_B36 = M_str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
-static inline min(isize a, isize b)
+static inline isize min(isize a, isize b)
 {
 	return a < b ? a : b;
 }

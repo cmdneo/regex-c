@@ -113,7 +113,7 @@ strbuf *strbuf_from_file(FILE *f, char end)
 	for (isize i = 0; (c = fgetc(f)) != EOF && c != end; i++) {
 		ret->size = i + 1;
 
-		if (ret->cap >= i) {
+		if (i < ret->cap) {
 			ret->data[i] = c;
 			continue;
 		}

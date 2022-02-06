@@ -1,4 +1,4 @@
-A basic RegEx library
+A RegEx library
 ===
 
 Project structure
@@ -13,15 +13,11 @@ Project structure
     |
     |---docs
     |---include
-    |   |---<module1_name>
-    |   |    |---internal
-    |   |---<module2_name>
-    |   |    |---internal
-    |   |---..............
+    |   |---regex
+    |   |---strlx
     |
-    |---<module1_name>
-    |---<module2_name>
-    |---..............
+    |---regex
+    |---strlx
     |
     |---tests
 
@@ -30,9 +26,9 @@ Project structure
 Module str
 --
 
-Basic string operations library, has two string types:
-- str: string slice type, just refers to data.
-- strbuf: A string builder which which does allocate memory and manages its own data
+String library ([strlx/strlx.h](include/strlx/strlx.h)), has two string types:
+- str: string slice type, just refers to the data.
+- strbuf: A dynamic string builder.
 
 Module re (**WIP**)
 ---
