@@ -244,9 +244,6 @@ isize str_to_ll(str s, int base, long long *num)
 	assert(num);
 	assert(2 <= base && base <= 36);
 
-	static const str bin_pref = M_str("0b");
-	static const str hex_pref = M_str("0x");
-
 	*num = 0;
 	long long mul = 1;
 	isize start = s.size;
@@ -260,7 +257,7 @@ isize str_to_ll(str s, int base, long long *num)
 		}
 	}
 
-	/* String is only whitespaces */
+	/* String is only whitespaces or empty */
 	if (start == s.size)
 		return 0;
 
@@ -269,25 +266,24 @@ isize str_to_ll(str s, int base, long long *num)
 		mul = -1;
 	} else if (s.data[start] == '+')
 		start++;
-	/* If only sign is present => INVALID */
-	if (start == s.size)
-		return start - 1;
 
-	if (base == 2 &&
-	    str_starts_with_case(str_substr(s, start, s.size), bin_pref))
+	if (base == 16 &&
+	    str_starts_with_case(str_substr(s, start, s.size), M_str("0x"))) {
 		start += 2;
-	else if (base == 16 &&
-		 str_starts_with_case(str_substr(s, start, s.size), hex_pref))
-		start += 2;
+		/* If no valid digit just after the prefix then x|X of the prefix is
+		   an invalid char and 0 of the prefix is assumed to be a digit */
+		if (start == s.size || !str_has_char(digs, s.data[start]))
+			return start - 1;
+	}
 
 	for (end = start; end < s.size; end++) {
 		if (!str_has_char_case(digs, s.data[end]))
 			break;
 	}
 
-	/* If no digits after SIGN or after SIGN AND PREFIX => INVALID */
+	/* If no digits after SIGN => INVALID */
 	if (end == start)
-		return start - 1;
+		return 0;
 
 	for (isize i = end - 1; i >= start; i--) {
 		*num += mul * DIG_VALS[(int)strlx_to_upper(s.data[i])];

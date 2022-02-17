@@ -316,11 +316,24 @@ isize strbuf_replace(strbuf *s, str old, str new)
 		return -1;
 
 	isize count = 0;
-	isize substr_start = strbuf_find_first(s, old);
-	while (substr_start >= 0) {
-		strbuf_remove(s, substr_start, substr_start + old.size);
-		strbuf_insert(s, new, substr_start);
-		substr_start = strbuf_find_first(s, old);
+	str cp = strbuf_substr(s, 0, s->size);
+	isize old_at = str_find_last(cp, old);
+
+	while (old_at >= 0 && cp.size >= 0) {
+		/* Make a space of size new.size at old_at to insert new */
+		strbuf_shift(s, old_at + old.size, new.size - old.size);
+		if (s->error)
+			return -1;
+
+		for (isize i = 0; i < new.size; i++)
+			s->data[old_at + i] = new.data[i];
+
+		/* Keep cutting off the string from where old was found(old_at)
+		 * last time and if old.size==0 (empty str) then old_at will be
+		 * cp.size, so subtract 1 from it(otherwise will cause an inf loop).
+		 */
+		cp.size = old_at - 1 * (old.size == 0);
+		old_at = str_find_last(cp, old);
 		count++;
 	}
 

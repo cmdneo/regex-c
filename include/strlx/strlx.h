@@ -10,7 +10,7 @@
 #ifndef INCLUDE_STRLX_STRLX_H_
 #define INCLUDE_STRLX_STRLX_H_
 
-#include <stdio.h> /* FILE */
+#include <stdio.h> /* FILE, EOF */
 
 /* -- Config -- */
 
@@ -30,13 +30,6 @@ typedef struct str {
 	isize size;
 	char const *data;
 } str;
-
-/** Creates str from C-string literal, useful for consts */
-#define M_str(string_literal)                         \
-	((str){                                       \
-		.data = (string_literal),             \
-		.size = (sizeof(string_literal) - 1), \
-	})
 
 str cstr(char const *s);
 str str_substr(str s, isize start, isize end);
@@ -84,15 +77,14 @@ str str_pop_first_split(str *s, str split_by);
 /**
  * @brief Converts str to long long int.
  * str can be have any number of leading whitespaces, can be prefixed with
- * + or - sign and can have prefixes for binary(0b and 0B) and
- * hexadecimal(0x and 0X) integers just after the sign.
- * If an illegal char is detected then parsing stops there and
- * num is the number upto where parsing was done.
+ * + or - sign and can have prefix hexadecimal(0x and 0X) integers
+ * just after the sign.
+ * If an illegal char is detected then parsing stops there
  * 
  * @param s 
  * @param base one of 2-36 (inclusive)
  * @param num Pointer to where the number will be stored
- * @return isize Index of the first illegal char. (s.size on success)
+ * @return isize Index of first illegal char. (s.size on success)
  */
 isize str_to_ll(str s, int base, long long *num);
 void str_print(str s);
@@ -144,7 +136,7 @@ void strbuf_to_lower(strbuf *s);
 /**
  * @brief Converts str to long long, strbuf wrapper for str_to_ll.
  * 
- * @param s 
+ * * @param s 
  * @param base one of 2-36 (inclusive)
  * @param num Pointer to where the number will be stored
  * @return isize Index of the first illegal char. (s->size on success)
@@ -159,6 +151,25 @@ int strlx_is_range_valid(isize size, isize start, isize end);
 void strlx_show_error(enum strlx_error error);
 
 /* -- Macros -- */
+
+/** Creates str from C-string literal, useful for consts */
+#define M_str(string_literal)                         \
+	((str){                                       \
+		.data = (string_literal),             \
+		.size = (sizeof(string_literal) - 1), \
+	})
+
+/* One indirection needed for using the ## operator due to the way
+   C preprocessor works, without it macro arguments are not expanded */
+#define CONCAT_TOKENS_IMPL(a, b) a##b
+#define CONCAT_TOKENS(a, b) CONCAT_TOKENS_IMPL(a, b)
+#define MACRO_VAR(var) (CONCAT_TOKENS(var, __LINE__))
+
+#define STR_FOREACH(s, cvar)                               \
+	for (isize MACRO_VAR(i__) = 0;                     \
+	     MACRO_VAR(i__) < (s).size &&                  \
+	     (((cvar) = (s).data[MACRO_VAR(i__)]) != EOF); \
+	     MACRO_VAR(i__)++)
 
 #define strbuf_from(any) \
 	_Generic((any),                    \
