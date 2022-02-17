@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 project(
 	RegexLib
 	VERSION 0.1
-	DESCRIPTION "Regex Library for C in C"
+	DESCRIPTION "Regex Library in C"
 	LANGUAGES C
 )
 
@@ -20,12 +20,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-# set(PUBLIC_HEADERS "strlx/strlx.h" "regex/regex.h" "regex/errors.h")
+set(PUBLIC_HEADERS "strlx/strlx.h" "regex/regex.h" "regex/errors.h")
 set(STRLX_SRCS "strlx/str.c" "strlx/strbuf.c" "strlx/common.c")
-# set(REGEX_SRCS "regex/dsa.c" "regex/parser.c")
+set(REGEX_SRCS "regex/dsa.c" "regex/parser.c")
 
 add_library(strlx ${STRLX_SRCS})
-# add_library(regex ${STRLX_SRCS} ${REGEX_SRCS})
+add_library(regex ${STRLX_SRCS} ${REGEX_SRCS})
 
 # Start testing
 include(CTest)
@@ -46,8 +46,8 @@ target_link_libraries(test-strlx strlx)
 add_test(NAME test-strlx COMMAND test-strlx)
 
 # TEST regex library
-# add_executable(test-regex tests/test-regex.c)
-# target_link_libraries(test-regex regex)
-# add_test(NAME test-regex COMMAND test-regex)
+add_executable(test-regex tests/test-regex.c)
+target_link_libraries(test-regex regex)
+add_test(NAME test-regex COMMAND test-regex)
 
-# set_tests_properties(test-strlx test-regex PROPERTIES TIMEOUT 5)
+set_tests_properties(test-strlx test-regex PROPERTIES TIMEOUT 5)
