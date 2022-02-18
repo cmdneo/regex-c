@@ -111,10 +111,9 @@ strbuf *strbuf_from_file(FILE *f, char end)
 
 	int c;
 	for (isize i = 0; (c = fgetc(f)) != EOF && c != end; i++) {
-		ret->size = i + 1;
-
 		if (i < ret->cap) {
 			ret->data[i] = c;
+			ret->size++;
 			continue;
 		}
 
@@ -125,6 +124,7 @@ strbuf *strbuf_from_file(FILE *f, char end)
 		}
 
 		ret->data[i] = c;
+		ret->size++;
 	}
 
 	assert_strbuf(ret);

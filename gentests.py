@@ -198,11 +198,12 @@ class Test:
 
 
 def escape(s):
-    return repr(str(s).strip().replace('"', '\"'))[1:-1]
+    return repr(str(s).strip().replace('"', '\\"'))[1:-1]
 
 
 def parse_args(line: str) -> list[str]:
     args = []
+
     while 1:
         match = C_LITERAL_REGEX.search(line)
         if not match:
