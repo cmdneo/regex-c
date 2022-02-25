@@ -16,7 +16,7 @@ void strlx_adjust_range(isize size, isize *start, isize *end)
 		*end = 0;
 }
 
-int strlx_is_range_valid(isize size, isize start, isize end)
+bool strlx_is_range_valid(isize size, isize start, isize end)
 {
 	return !(start > end || end > size || start < 0);
 }

@@ -10,6 +10,7 @@
 #ifndef INCLUDE_STRLX_STRLX_H_
 #define INCLUDE_STRLX_STRLX_H_
 
+#include <stdbool.h>
 #include <stdio.h> /* FILE, EOF */
 
 /* -- Config -- */
@@ -49,14 +50,14 @@ isize str_find_first(str s, str t);
 isize str_find_last(str s, str t);
 
 isize str_count(str s, str t);
-int str_has_char(str s, char c);
-int str_has_char_case(str s, char c);
+bool str_has_char(str s, char c);
+bool str_has_char_case(str s, char c);
 
-int str_starts_with(str s, str t);
-int str_starts_with_case(str s, str t);
+bool str_starts_with(str s, str t);
+bool str_starts_with_case(str s, str t);
 
-int str_ends_with(str s, str t);
-int str_ends_with_case(str s, str t);
+bool str_ends_with(str s, str t);
+bool str_ends_with_case(str s, str t);
 
 str str_lstrip(str s, str t);
 str str_rstrip(str s, str t);
@@ -112,9 +113,9 @@ isize strbuf_cmp2(strbuf const *s, strbuf const *t);
 isize strbuf_find_first(strbuf const *s, str t);
 isize strbuf_find_last(strbuf const *s, str t);
 isize strbuf_count(strbuf const *s, str t);
-int strbuf_has_char(strbuf const *s, char c);
-int strbuf_starts_with(strbuf const *s, str t);
-int strbuf_ends_with(strbuf const *s, str t);
+bool strbuf_has_char(strbuf const *s, char c);
+bool strbuf_starts_with(strbuf const *s, str t);
+bool strbuf_ends_with(strbuf const *s, str t);
 
 void strbuf_insert(strbuf *s, str t, isize pos);
 void strbuf_remove(strbuf *s, isize start, isize end);
@@ -136,7 +137,7 @@ void strbuf_to_lower(strbuf *s);
 /**
  * @brief Converts str to long long, strbuf wrapper for str_to_ll.
  * 
- * * @param s 
+ * @param s 
  * @param base one of 2-36 (inclusive)
  * @param num Pointer to where the number will be stored
  * @return isize Index of the first illegal char. (s->size on success)
@@ -147,17 +148,15 @@ void strbuf_print(strbuf const *s);
 /* Common Functions */
 
 void strlx_adjust_range(isize size, isize *start, isize *end);
-int strlx_is_range_valid(isize size, isize start, isize end);
+bool strlx_is_range_valid(isize size, isize start, isize end);
 void strlx_show_error(enum strlx_error error);
 
 /* -- Macros -- */
 
 /** Creates str from C-string literal, useful for consts */
-#define M_str(string_literal)                         \
-	((str){                                       \
-		.data = (string_literal),             \
-		.size = (sizeof(string_literal) - 1), \
-	})
+#define M_str(string_literal)             \
+	((str){ .data = (string_literal), \
+		.size = (sizeof(string_literal) - 1) })
 
 /* One indirection needed for using the ## operator due to the way
    C preprocessor works, without it macro arguments are not expanded */
@@ -174,7 +173,6 @@ void strlx_show_error(enum strlx_error error);
 #define strbuf_from(any) \
 	_Generic((any),                    \
 	int: strbuf_from_cap,              \
-	/* Here isize is long int */       \
 	isize: strbuf_from_cap,            \
 	str: strbuf_from_str,              \
 	strbuf*: strbuf_copy,              \
@@ -200,11 +198,11 @@ static const str STR_BIN_DIGITS = M_str("01");
 static const str STR_OCT_DIGITS = M_str("01234567");
 static const str STR_DIGITS = M_str("0123456789");
 static const str STR_HEX_DIGITS = M_str("0123456789abcdefABCDEF");
-static const str STR_PUNCT = M_str("!\"#$%%&\'()*+,-./:;<=>?@[\\]^_`{|}~");
+static const str STR_PUNCT = M_str("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
 
 /* -- Inline Charatcer functions -- */
 
-static inline int strlx_is_space(char c)
+static inline bool strlx_is_space(char c)
 {
 	for (isize i = 0; i < STR_WHITESPACES.size; i++)
 		if (c == STR_WHITESPACES.data[i])
@@ -213,12 +211,12 @@ static inline int strlx_is_space(char c)
 	return 0;
 }
 
-static inline int strlx_is_upper(char c)
+static inline bool strlx_is_upper(char c)
 {
 	return 'A' <= c && c <= 'Z';
 }
 
-static inline int strlx_is_lower(char c)
+static inline bool strlx_is_lower(char c)
 {
 	return 'a' <= c && c <= 'z';
 }

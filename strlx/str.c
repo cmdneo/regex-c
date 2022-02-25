@@ -135,7 +135,7 @@ isize str_count(str s, str t)
 	return count;
 }
 
-int str_has_char(str s, char c)
+bool str_has_char(str s, char c)
 {
 	for (isize i = 0; i < s.size; i++)
 		if (s.data[i] == c)
@@ -144,7 +144,7 @@ int str_has_char(str s, char c)
 	return 0;
 }
 
-int str_has_char_case(str s, char c)
+bool str_has_char_case(str s, char c)
 {
 	c = strlx_to_lower(c);
 	for (isize i = 0; i < s.size; i++)
@@ -154,14 +154,14 @@ int str_has_char_case(str s, char c)
 	return 0;
 }
 
-int str_starts_with(str s, str t)
+bool str_starts_with(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;
 	return str_cmp(str_substr(s, 0, t.size), t) == 0;
 }
 
-int str_starts_with_case(str s, str t)
+bool str_starts_with_case(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;
@@ -169,14 +169,15 @@ int str_starts_with_case(str s, str t)
 	return str_cmp_case(str_substr(s, 0, t.size), t) == 0;
 }
 
-int str_ends_with(str s, str t)
+bool str_ends_with(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;
+
 	return str_cmp(str_substr(s, s.size - t.size, s.size), t) == 0;
 }
 
-int str_ends_with_case(str s, str t)
+bool str_ends_with_case(str s, str t)
 {
 	if (t.size > s.size)
 		return 0;

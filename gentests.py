@@ -71,24 +71,17 @@ BLOCK_START_TAG = "<%"
 BLOCK_END_TAG = "%>"
 # As per C11 stnadard
 C_LITERAL_REGEXES = {
-    # Character constant
     "char":  (r"(L|u|U)?'([^'\\\n]|(\\[0-7]{1,3}|(\\x[\da-fA-F]+)"
               r"|\\'|\\\"|\\\?|\\\\|\\a|\\b|\\f|\\n|\\r|\\t|\\v))'"),
-    # String Literal
     "string": r'(u8|u|U|L)?"([^"\\\n]|(\\.))*"',
     # Here we are matching numberic literals(ints floats) along with their
     # signs(+ or -). In C they are considered Unary operators and aren't part
-    # of these numeric literals, but not here because we aren't parsing C.
-    # Hexadecimal floating constant
+    # of these numeric literals, but not here
     "float_hex": (r'[+-]?' r'(0x|0X)(([\da-fA-F]*\.[\da-fA-F]+)'
                   r'|([\da-fA-F]+\.)|([\da-fA-F]+))([pP][+-]?\d+)?[flFL]?'),
-    # Decimal floating constant
     "float_dec":  r'[+-]?' r'((\d*\.\d+)|(\d+\.)|(\d+))([eE][+-]?\d+)?[flFL]?',
-    # Integer: Hexadecimal constant
     "int_hex": r'[+-]?' r'(0x|0X)[0-9a-fA-F]+(u|U|l|L|ll|LL)?',
-    # Integer: Octal constant
     "int_oct": r'[+-]?' r'0[0-7]*(u|U|l|L|ll|LL)?',
-    # Integer: Decimal constant
     "int_dec": r'[+-]?' r'[1-9]\d*(u|U|l|L|ll|LL)?',
 }
 # Combine all the above regexes into a single regex by grouping and OR

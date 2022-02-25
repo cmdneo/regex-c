@@ -11,6 +11,12 @@ enum strbuf_default {
 	STRBUF_INIT_CAP = 8,
 };
 
+/**
+ * @brief scales cap by 3/2, and if cap < 2 => cap = 2, then scale
+ * 
+ * @param cap 
+ * @return isize 
+ */
 static inline isize next_cap(isize cap)
 {
 	if (cap < 2)
@@ -38,7 +44,7 @@ static void strbuf_shift(strbuf *s, isize offset, isize shift_by)
 		return;
 
 	isize new_size = s->size + shift_by;
-	if (shift_by > 0 && s->cap < new_size) {
+	if (s->cap < new_size) {
 		strbuf_resize(s, next_cap(new_size));
 		if (s->error)
 			return;
@@ -48,7 +54,7 @@ static void strbuf_shift(strbuf *s, isize offset, isize shift_by)
 		for (isize i = s->size - 1; i >= offset; i--)
 			s->data[i + shift_by] = s->data[i];
 	} else {
-		assert(llabs(shift_by) <= offset);
+		assert(labs(shift_by) <= offset);
 		for (isize i = offset; i < s->size; i++)
 			s->data[i + shift_by] = s->data[i];
 	}
@@ -229,18 +235,18 @@ isize strbuf_count(strbuf const *s, str t)
 	return str_count(strbuf_to_str(s), t);
 }
 
-int strbuf_has_char(strbuf const *s, char c)
+bool strbuf_has_char(strbuf const *s, char c)
 {
 	assert_strbuf(s);
 	return str_has_char(strbuf_to_str(s), c);
 }
 
-int strbuf_starts_with(strbuf const *s, str t)
+bool strbuf_starts_with(strbuf const *s, str t)
 {
 	assert_strbuf(s);
 	return str_starts_with(strbuf_to_str(s), t);
 }
-int strbuf_ends_with(strbuf const *s, str t)
+bool strbuf_ends_with(strbuf const *s, str t)
 {
 	assert_strbuf(s);
 	return str_ends_with(strbuf_to_str(s), t);
