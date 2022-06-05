@@ -7,19 +7,32 @@ def repr_double(s):
 
 
 chars = {
-    "RE_TC_PCC_ALNUM": ("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-    "RE_TC_PCC_ALPHA": ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-    "RE_TC_PCC_ASCII": ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f " "!\"#$%%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7f"),
+    "RE_TC_PCC_ALNUM": ("0123456789abcdefghijklmnopqrstuvwxyz"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    "RE_TC_PCC_ALPHA": ("abcdefghijklmnopqrstuvwxyz"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    "RE_TC_PCC_ASCII": ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r"
+                        "\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a"
+                        "\x1b\x1c\x1d\x1e\x1f " "!\"#$%%&\'()*+,-./"
+                        "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+                        "abcdefghijklmnopqrstuvwxyz{|}~\x7f"),
     "RE_TC_PCC_BLANK": (" \t"),
-    "RE_TC_PCC_CNTRL": ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x7f"),
+    "RE_TC_PCC_CNTRL": ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c"
+                        "\r\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19"
+                        "\x1a\x1b\x1c\x1d\x1e\x7f"),
     "RE_TC_PCC_DIGIT": ("0123456789"),
-    "RE_TC_PCC_GRAPH": ("!\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"),
+    "RE_TC_PCC_GRAPH": ("!\"#$%&\'()*+,-./0123456789:;<=>?@"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+                        "abcdefghijklmnopqrstuvwxyz{|}~"),
     "RE_TC_PCC_LOWER": ("abcdefghijklmnopqrstuvwxyz"),
-    "RE_TC_PCC_PRINT": (" !\"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"),
+    "RE_TC_PCC_PRINT": (" !\"#$%&\'()*+,-./0123456789:;<=>?@"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+                        "abcdefghijklmnopqrstuvwxyz{|}~"),
     "RE_TC_PCC_PUNCT": ("!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~"),
     "RE_TC_PCC_SPACE": (" \t\n\r\f\v"),
     "RE_TC_PCC_UPPER": ("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-    "RE_TC_PCC_WORD": ("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
+    "RE_TC_PCC_WORD": ("0123456789abcdefghijklmnopqrstuvwxyz"
+                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ_"),
     "RE_TC_PCC_XDIGIT": ("0123456789ABCDEFabcdef"),
 }
 
@@ -100,6 +113,7 @@ RE_TC_ASTERISK = *= *
 RE_TC_PERIOD = .= .
 RE_TC_BAR = |= |
 RE_TC_BSLASH = \= \\
+
 """.split("\n")
 
 
@@ -136,15 +150,20 @@ for tok in toks:
     tt, val = fields[0].strip(), fields[1].strip()
 
     if len(fields) == 4 and fields[3].strip() == "ORD":
-        print(f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), .type = RE_TT_ORD, .value = '{(fields[2].strip())}' }},")
+        print(f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), "
+              f".type = RE_TT_ORD, .value = '{(fields[2].strip())}' }},"
+              )
 
     elif len(fields) == 3:
         print(
-            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), .type = {tt}, .value = '{(fields[2].strip())}' }},")
+            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), .type = {tt}, "
+            f".value = '{(fields[2].strip())}' }},")
 
     else:
         print(
-            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), .type = {tt} }},")
+            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), "
+            f".type = {tt} }},"
+        )
 
 print("};")
 
