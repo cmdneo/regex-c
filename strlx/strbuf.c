@@ -11,12 +11,6 @@ enum strbuf_default {
 	STRBUF_INIT_CAP = 8,
 };
 
-/**
- * @brief scales cap by 3/2, and if cap < 2 => cap = 2, then scale
- * 
- * @param cap 
- * @return isize 
- */
 static inline isize next_cap(isize cap)
 {
 	if (cap < 2)

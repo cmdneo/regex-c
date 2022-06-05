@@ -1,4 +1,3 @@
-#include <inttypes.h>
 #include <assert.h>
 
 #include "strlx/strlx.h"
@@ -268,8 +267,8 @@ isize str_to_ll(str s, int base, long long *num)
 	} else if (s.data[start] == '+')
 		start++;
 
-	if (base == 16 &&
-	    str_starts_with_case(str_substr(s, start, s.size), M_str("0x"))) {
+	if (base == 16 && str_starts_with_case(str_substr(s, start, s.size),
+					       (str)M_str("0x"))) {
 		start += 2;
 		/* If no valid digit just after the prefix then x|X of the prefix is
 		   an invalid char and 0 of the prefix is assumed to be a digit */

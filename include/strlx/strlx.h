@@ -1,10 +1,10 @@
 /**
  * @file strlx.h
- * @brief String library 
+ * @brief String library
  * @version 0.1
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 #ifndef INCLUDE_STRLX_STRLX_H_
@@ -13,14 +13,13 @@
 #include <stdbool.h>
 #include <stdio.h> /* FILE, EOF */
 
-/* -- Config -- */
+/* -- Enums -- */
 
 enum strlx_error {
-	STRLX_NO_ERR = 0,
-	STRLX_INVALID_INDEX = 100,
+	STRLX_NO_ERR,
+	STRLX_INVALID_INDEX,
 	STRLX_NO_MEM,
-	STRLX_ALREADY_EXISTS,
-	STRLX_NOT_FOUND,
+	STRLX_NERRORS,
 };
 
 /* -- Data structures and functions -- */
@@ -39,7 +38,7 @@ isize str_cmp(str s, str t);
 isize str_cmp_case(str s, str t);
 /**
  * @brief Reverses s then compares s and t
- * 
+ *
  * @param s
  * @param t
  * @return int Number of characters matched
@@ -81,8 +80,8 @@ str str_pop_first_split(str *s, str split_by);
  * + or - sign and can have prefix hexadecimal(0x and 0X) integers
  * just after the sign.
  * If an illegal char is detected then parsing stops there
- * 
- * @param s 
+ *
+ * @param s
  * @param base one of 2-36 (inclusive)
  * @param num Pointer to where the number will be stored
  * @return isize Index of first illegal char. (s.size on success)
@@ -136,8 +135,8 @@ void strbuf_to_lower(strbuf *s);
 
 /**
  * @brief Converts str to long long, strbuf wrapper for str_to_ll.
- * 
- * @param s 
+ *
+ * @param s
  * @param base one of 2-36 (inclusive)
  * @param num Pointer to where the number will be stored
  * @return isize Index of the first illegal char. (s->size on success)
@@ -148,26 +147,29 @@ void strbuf_print(strbuf const *s);
 /* Common Functions */
 
 void strlx_adjust_range(isize size, isize *start, isize *end);
-bool strlx_is_range_valid(isize size, isize start, isize end);
-void strlx_show_error(enum strlx_error error);
 
 /* -- Macros -- */
 
-/** Creates str from C-string literal, useful for consts */
-#define M_str(string_literal)             \
-	((str){ .data = (string_literal), \
-		.size = (sizeof(string_literal) - 1) })
-
+/**
+ * @brief Creates str from C-string literal, useful for consts
+ *
+ * Not a compound literal, cast to str if using for compound literal
+ */
+#define M_str(string_literal)                                                  \
+	{                                                                      \
+		.data = (string_literal), .size = (sizeof(string_literal) - 1) \
+	}
+/* Same but for use with static consts because C standard*/
 /* One indirection needed for using the ## operator due to the way
    C preprocessor works, without it macro arguments are not expanded */
 #define CONCAT_TOKENS_IMPL(a, b) a##b
 #define CONCAT_TOKENS(a, b) CONCAT_TOKENS_IMPL(a, b)
 #define MACRO_VAR(var) (CONCAT_TOKENS(var, __LINE__))
 
-#define STR_FOREACH(s, cvar)                               \
-	for (isize MACRO_VAR(i__) = 0;                     \
-	     MACRO_VAR(i__) < (s).size &&                  \
-	     (((cvar) = (s).data[MACRO_VAR(i__)]) != EOF); \
+#define STR_FOREACH(s, cvar)                             \
+	for (isize MACRO_VAR(i__) = 0;                   \
+	     (MACRO_VAR(i__) < (s).size) &&              \
+	     (((cvar) = (s).data[MACRO_VAR(i__)]) || 1); \
 	     MACRO_VAR(i__)++)
 
 #define strbuf_from(any) \
@@ -175,11 +177,9 @@ void strlx_show_error(enum strlx_error error);
 	int: strbuf_from_cap,              \
 	isize: strbuf_from_cap,            \
 	str: strbuf_from_str,              \
-	strbuf*: strbuf_copy,              \
-	char*: strbuf_from_cstr,           \
-	/* For string literals: char[N] */ \
-	char[sizeof any]: strbuf_from_cstr \
-)(any)
+	strbuf *: strbuf_copy,             \
+	char *: strbuf_from_cstr,          \
+	char[sizeof(any)]: strbuf_from_cstr)(any)
 
 #define PRI_isize "ld"
 
@@ -223,12 +223,23 @@ static inline bool strlx_is_lower(char c)
 
 static inline char strlx_to_lower(char c)
 {
-	return c + ('a' - 'A') * strlx_is_upper(c);
+	if (strlx_is_upper(c))
+		return c + ('a' - 'A');
+	else
+		return c;
 }
 
 static inline char strlx_to_upper(char c)
 {
-	return c + ('A' - 'a') * strlx_is_lower(c);
+	if (strlx_is_lower(c))
+		return c + ('A' - 'a');
+	else
+		return c;
+}
+
+static inline bool strlx_is_range_valid(isize size, isize start, isize end)
+{
+	return !(start > end || end > size || start < 0);
 }
 
 #endif /* END strlx/strlx.h */
