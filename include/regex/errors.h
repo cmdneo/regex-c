@@ -1,8 +1,10 @@
 #ifndef INCLUDE_REGEX_ERRORS_H
 #define INCLUDE_REGEX_ERRORS_H
 
-enum regex_error {
-	REGEX_NO_ERR = 0,
+enum regex_error_codes {
+	REGEX_NO_ERR,
+
+	REGEX_NO_MEM,
 	REGEX_NO_MATCH,
 
 	REGEX_POSIX_CHAR_CLASS_OUTSIDE,
@@ -12,6 +14,7 @@ enum regex_error {
 
 	REGEX_ILLEGAL_CHAR,
 	REGEX_ILLEGAL_ESC,
+	REGEX_TRAILING_BKSLASH,
 
 	REGEX_HEX_TOO_BIG,
 	REGEX_OCT_TOO_BIG,
@@ -23,75 +26,37 @@ enum regex_error {
 	REGEX_INVALID_CHAR_CLASS,
 	REGEX_INVALID_POSIX_CHAR_CLASS,
 
-	REGEX_TRAILING_BKSLASH,
-	REGEX_NO_MEM,
+	REGEX_NERRORS,
 };
 
-static char *regex_perr(enum regex_error err)
+static const char *regex_error_messages[REGEX_NERRORS] = {
+	[REGEX_NO_ERR] = "No error",
+	[REGEX_NO_MEM] = "Memory allocation error",
+	[REGEX_NO_MATCH] = "No matching tokens",
+	[REGEX_POSIX_CHAR_CLASS_OUTSIDE] =
+		"Posix character class must be inside a character class",
+	[REGEX_EXTRA_PAREN] = "Extra parenthesis",
+	[REGEX_NO_CLOSING_PAREN] = "Unclosed parenthesis",
+	[REGEX_NO_CLOSING_BRACKET] = "No closing bracket ]",
+	[REGEX_ILLEGAL_CHAR] = "Illegal character",
+	[REGEX_ILLEGAL_ESC] = "Illegal escape sequence",
+	[REGEX_TRAILING_BKSLASH] = "Invalid or empty character class",
+	[REGEX_HEX_TOO_BIG] = "Invalid POSIX character class",
+	[REGEX_OCT_TOO_BIG] = "Hex bigger than CHAR_MAX",
+	[REGEX_INVALID_HEX] = "Oct bigger than CHAR_MAX",
+	[REGEX_INVALID_GROUP] = "Invalid hex",
+	[REGEX_INVALID_RANGE] = "Non existent capture group number",
+	[REGEX_INVALID_EXT] = "Invalid range",
+	[REGEX_INVALID_CHAR_RANGE] = "Invalid char range in character class",
+	[REGEX_INVALID_CHAR_CLASS] = "Non existent extension prefix",
+	[REGEX_INVALID_POSIX_CHAR_CLASS] = "Unescaped backslash",
+};
+
+static const char *regex_error(enum regex_error_codes err)
 {
-	char *s = "No error";
-
-	switch (err) {
-	case REGEX_NO_ERR:
-		s = "No error";
-		break;
-	case REGEX_NO_MATCH:
-		s = "No matching tokens";
-		break;
-	case REGEX_POSIX_CHAR_CLASS_OUTSIDE:
-		s = "Posix character class must be inside a char class";
-		break;
-	case REGEX_EXTRA_PAREN:
-		s = "Extra parenthesis";
-		break;
-	case REGEX_NO_CLOSING_PAREN:
-		s = "Unclosed parenthesis";
-		break;
-	case REGEX_NO_CLOSING_BRACKET:
-		s = "No closing bracket ]";
-		break;
-	case REGEX_ILLEGAL_CHAR:
-		s = "Illegal character";
-		break;
-	case REGEX_ILLEGAL_ESC:
-		s = "Illegal escape sequence";
-		break;
-	case REGEX_INVALID_CHAR_CLASS:
-		s = "Invalid or empty character class";
-		break;
-	case REGEX_INVALID_POSIX_CHAR_CLASS:
-		s = "Invalid POSIX character class";
-		break;
-	case REGEX_HEX_TOO_BIG:
-		s = "Hex bigger than CHAR_MAX";
-		break;
-	case REGEX_OCT_TOO_BIG:
-		s = "Oct bigger than CHAR_MAX";
-		break;
-	case REGEX_INVALID_HEX:
-		s = "Invalid hex";
-		break;
-	case REGEX_INVALID_GROUP:
-		s = "Non existent capture group number";
-		break;
-	case REGEX_INVALID_RANGE:
-		s = "Invalid range";
-		break;
-	case REGEX_INVALID_CHAR_RANGE:
-		s = "Invalid char range in character class";
-		break;
-	case REGEX_INVALID_EXT:
-		s = "Non existent extension prefix";
-		break;
-	case REGEX_TRAILING_BKSLASH:
-		s = "Unescaped backslash";
-		break;
-	case REGEX_NO_MEM:
-		s = "Memory allocation error";
-		break;
-	}
-
-	return s;
+	if (!(0 <= err && err < REGEX_NERRORS))
+		return "Invalid Error code passed! No such error.";
+	return regex_error_messages[err];
 }
 
 #endif

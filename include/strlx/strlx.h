@@ -159,7 +159,7 @@ void strlx_adjust_range(isize size, isize *start, isize *end);
 	{                                                                      \
 		.data = (string_literal), .size = (sizeof(string_literal) - 1) \
 	}
-/* Same but for use with static consts because C standard*/
+
 /* One indirection needed for using the ## operator due to the way
    C preprocessor works, without it macro arguments are not expanded */
 #define CONCAT_TOKENS_IMPL(a, b) a##b
