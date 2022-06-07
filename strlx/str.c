@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 
 #include "strlx/strlx.h"
 
@@ -17,6 +18,17 @@ static inline isize min(isize a, isize b)
 	return a < b ? a : b;
 }
 
+static inline bool str_has_any_at(str s, str chars, isize at)
+{
+	assert(0 <= at && at < s.size);
+	for (isize i = 0; i < chars.size; i++) {
+		if (chars.data[i] == s.data[at])
+			return true;
+	}
+
+	return false;
+}
+
 str cstr(char const *s)
 {
 	isize i;
@@ -27,7 +39,8 @@ str cstr(char const *s)
 
 str str_substr(str s, isize start, isize end)
 {
-	strlx_adjust_range(s.size, &start, &end);
+	if (!strlx_is_range_valid(s.size, start, end))
+		strlx_adjust_range(s.size, &start, &end);
 
 	return (str){
 		.size = end - start,
@@ -184,35 +197,42 @@ bool str_ends_with_case(str s, str t)
 	return str_cmp_case(str_substr(s, s.size - t.size, s.size), t) == 0;
 }
 
-str str_lstrip(str s, str t)
+str str_remove_prefix(str s, str pref)
 {
-	if (t.size == 0 || t.size > s.size)
-		return s;
+	if (str_starts_with(s, pref))
+		return str_substr(s, pref.size, s.size);
 
-	str ret = s;
-	while (str_starts_with(ret, t))
-		ret = str_substr(ret, t.size, ret.size);
-
-	return ret;
+	return s;
 }
 
-str str_rstrip(str s, str t)
+str str_remove_suffix(str s, str suff)
 {
-	if (t.size == 0 || t.size > s.size)
-		return s;
+	if (str_ends_with(s, suff))
+		return str_substr(s, 0, s.size - suff.size);
 
-	str ret = s;
-	while (str_ends_with(ret, t))
-		ret = str_substr(ret, 0, ret.size - t.size);
+	return s;
+}
 
-	return ret;
+str str_lstrip(str s, str chars)
+{
+	while (s.size != 0 && str_has_any_at(s, chars, 0)) {
+		s.data++;
+		s.size--;
+	}
+
+	return s;
+}
+
+str str_rstrip(str s, str chars)
+{
+	while (s.size != 0 && str_has_any_at(s, chars, s.size - 1))
+		s.size--;
+
+	return s;
 }
 
 str str_strip(str s, str t)
 {
-	if (t.size == 0 || t.size > s.size)
-		return s;
-
 	str ret = s;
 	ret = str_lstrip(ret, t);
 	ret = str_rstrip(ret, t);

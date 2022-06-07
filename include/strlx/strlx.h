@@ -58,9 +58,11 @@ bool str_starts_with_case(str s, str t);
 bool str_ends_with(str s, str t);
 bool str_ends_with_case(str s, str t);
 
-str str_lstrip(str s, str t);
-str str_rstrip(str s, str t);
-str str_strip(str s, str t);
+str str_remove_prefix(str s, str pref);
+str str_remove_suffix(str s, str suff);
+str str_lstrip(str s, str chars);
+str str_rstrip(str s, str chars);
+str str_strip(str s, str chars);
 
 /**
  * @brief Splits and pops string one by one.
@@ -118,9 +120,12 @@ bool strbuf_ends_with(strbuf const *s, str t);
 
 void strbuf_insert(strbuf *s, str t, isize pos);
 void strbuf_remove(strbuf *s, isize start, isize end);
-void strbuf_lstrip(strbuf *s, str t);
-void strbuf_rstrip(strbuf *s, str t);
-void strbuf_strip(strbuf *s, str t);
+
+void strbuf_remove_prefix(strbuf *s, str pref);
+void strbuf_remove_suffix(strbuf *s, str suff);
+void strbuf_lstrip(strbuf *s, str chars);
+void strbuf_rstrip(strbuf *s, str chars);
+void strbuf_strip(strbuf *s, str chars);
 isize strbuf_replace(strbuf *s, str old, str new);
 void strbuf_append(strbuf *s, str t);
 void strbuf_prepend(strbuf *s, str t);

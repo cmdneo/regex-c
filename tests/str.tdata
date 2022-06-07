@@ -174,19 +174,32 @@
 "ss"            "abc"        0
 ""              "abc"        0
 
+=> str_remove_prefix
+<%
+	str $tmp0 = str_remove_prefix(cstr($strip_me), cstr($prefix));
+	result = str_cmp($tmp0, cstr($exp)) == 0;
+%>
+:strip_me            prefix       exp
+"AXAX 124AX"         "AX"         "AX 124AX"
+"123ABC"             "23"         "123ABC" 
+
+
+=> str_remove_suffix
+<%
+	str $tmp0 = str_remove_suffix(cstr($strip_me), cstr($suffix));
+	result = str_cmp($tmp0, cstr($exp)) == 0;
+%>
+:strip_me            suffix       exp
+"BXAX 124BXBX"       "BX"         "BXAX 124BX"
+"123ABC"             "AB"         "123ABC" 
+
 => str_lstrip
 <%
 	str $tmp0 = str_lstrip(cstr($strip_me), cstr($strip_ends));
 	result = str_cmp($tmp0, cstr($exp)) == 0;
 %>
 :strip_me            strip_ends   exp
-"ABAB STUFF ABAB"    "AB"         " STUFF ABAB"
-"FRONTMATTER"        "FRONT"      "MATTER"
-"MATTERBACK"         "BACK"       "MATTERBACK"
-"NO Strip"           ""           "NO Strip"
-"COMPLETE set"       "unexist"    "COMPLETE set"
-"short"              "longlong"   "short"
-""                   "ffef"       ""
+"12AC12 3121"        "12"        "AC12 3121"
 
 => str_rstrip
 <%
@@ -194,13 +207,8 @@
 	result = str_cmp($tmp0, cstr($exp)) == 0;
 %>
 :strip_me            strip_ends   exp
-"ABAB STUFF ABAB"    "AB"         "ABAB STUFF "
-"FRONTMATTER"        "FRONT"      "FRONTMATTER"
-"MATTERBACK"         "BACK"       "MATTER"
-"NO Strip"           ""           "NO Strip"
-"COMPLETE set"       "unexist"    "COMPLETE set"
-"short"              "longlong"   "short"
-""                   "ffef"       ""
+"12AC12 3121"        "12"        "12AC12 3"
+
 
 => str_strip
 <%
@@ -208,13 +216,8 @@
 	result = str_cmp($tmp0, cstr($exp)) == 0;
 %>
 :strip_me            strip_ends   exp
-"ABAB STUFF ABAB"    "AB"         " STUFF "
-"FRONTMATTER"        "FRONT"      "MATTER"
-"MATTERBACK"         "BACK"       "MATTER"
-"NO Strip"           ""           "NO Strip"
-"COMPLETE set"       "unexist"    "COMPLETE set"
-"short"              "longlong"   "short"
-""                   "ffef"       ""
+"12AC12 3121"        "12"        "AC12 3"
+"12---AB"            "12AB"      "---"
 
 => str_pop_first_split
 <%
@@ -456,6 +459,27 @@
 "a"         '-'  4      "-a--"
 "aaaaa"     'x'  1      "aaaaa"
 
+=> strbuf_lstrip
+<%
+	strbuf *$tmp0 = strbuf_from($strip_me);
+	strbuf_lstrip($tmp0, cstr($strip_this));
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:strip_me             strip_this  exp
+"12---AB21"           "12"        "---AB21"
+
+=> strbuf_rstrip
+<%
+	strbuf *$tmp0 = strbuf_from($strip_me);
+	strbuf_rstrip($tmp0, cstr($strip_this));
+	result = strbuf_cmp($tmp0, cstr($exp)) == 0;
+	strbuf_destroy(&$tmp0);
+%>
+:strip_me             strip_this  exp
+"12AC12 3121"         "A12"      "12AC12 3"
+"BA12---AB"           "AB"       "BA12---"
+
 
 => strbuf_strip
 <%
@@ -465,8 +489,4 @@
 	strbuf_destroy(&$tmp0);
 %>
 :strip_me             strip_this  exp
-"ABAB STUFF ABAB"      "AB"      " STUFF "
-"FRONTMATTER"          "FRONT"   "MATTER"
-"MATTERBACK"           "BACK"    "MATTER"
-"COMPLETE set"         "unexist" "COMPLETE set"
-"cAse sensetive"       "case"    "cAse sensetive"
+"12---AB"            "12AB"      "---"

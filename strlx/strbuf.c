@@ -240,6 +240,7 @@ bool strbuf_starts_with(strbuf const *s, str t)
 	assert_strbuf(s);
 	return str_starts_with(strbuf_to_str(s), t);
 }
+
 bool strbuf_ends_with(strbuf const *s, str t)
 {
 	assert_strbuf(s);
@@ -277,35 +278,63 @@ void strbuf_remove(strbuf *s, isize start, isize end)
 	assert_strbuf(s);
 }
 
-void strbuf_lstrip(strbuf *s, str substr)
+void strbuf_remove_prefix(strbuf *s, str pref)
 {
 	assert_strbuf(s);
 	if (s->error)
 		return;
 
-	str tmp = str_lstrip(strbuf_to_str(s), substr);
+	str tmp = str_remove_prefix(strbuf_to_str(s), pref);
 	strbuf_remove(s, 0, (isize)(tmp.data - s->data));
 
 	assert_strbuf(s);
 }
 
-void strbuf_rstrip(strbuf *s, str substr)
+void strbuf_remove_suffix(strbuf *s, str suff)
 {
 	assert_strbuf(s);
 	if (s->error)
 		return;
 
-	str tmp = str_rstrip(strbuf_to_str(s), substr);
+	str tmp = str_remove_suffix(strbuf_to_str(s), suff);
 	s->size = tmp.size;
 
 	assert_strbuf(s);
 }
 
-void strbuf_strip(strbuf *s, str substr)
+void strbuf_lstrip(strbuf *s, str chars)
 {
 	assert_strbuf(s);
-	strbuf_lstrip(s, substr);
-	strbuf_rstrip(s, substr);
+	if (s->error)
+		return;
+
+	str tmp = str_lstrip(strbuf_to_str(s), chars);
+	strbuf_shift(s, tmp.data - s->data, s->data - tmp.data);
+
+	assert_strbuf(s);
+}
+
+void strbuf_rstrip(strbuf *s, str chars)
+{
+	assert_strbuf(s);
+	if (s->error)
+		return;
+
+	str tmp = str_rstrip(strbuf_to_str(s), chars);
+	s->size = tmp.size;
+
+	assert_strbuf(s);
+}
+
+void strbuf_strip(strbuf *s, str chars)
+{
+	assert_strbuf(s);
+	if (s->error)
+		return;
+
+	strbuf_rstrip(s, chars);
+	strbuf_lstrip(s, chars);
+
 	assert_strbuf(s);
 }
 
@@ -344,18 +373,14 @@ isize strbuf_replace(strbuf *s, str old, str new)
 void strbuf_append(strbuf *s, str t)
 {
 	assert_strbuf(s);
-
 	strbuf_insert(s, t, s->size);
-
 	assert_strbuf(s);
 }
 
 void strbuf_prepend(strbuf *s, str t)
 {
 	assert_strbuf(s);
-
 	strbuf_insert(s, t, 0);
-
 	assert_strbuf(s);
 }
 
