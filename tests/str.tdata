@@ -200,6 +200,7 @@
 %>
 :strip_me            strip_ends   exp
 "12AC12 3121"        "12"        "AC12 3121"
+"12AC12 3121"        "NO"        "12AC12 3121"
 
 => str_rstrip
 <%
@@ -208,6 +209,7 @@
 %>
 :strip_me            strip_ends   exp
 "12AC12 3121"        "12"        "12AC12 3"
+"12AC12 3121"        "44"        "12AC12 3121"
 
 
 => str_strip
@@ -218,6 +220,8 @@
 :strip_me            strip_ends   exp
 "12AC12 3121"        "12"        "AC12 3"
 "12---AB"            "12AB"      "---"
+"12---AC"            "4444"      "12---AC"
+
 
 => str_pop_first_split
 <%
@@ -243,9 +247,6 @@
 	result = result && ($tmp0 == $exp);
 %>
 :s             base exp     ret
-"0x999"        16   0x999   5
-"+0x999"       16   0x999   6
-"-0x999"       16   -0x999  6
 "999"          16   0x999   3
 "+999"         16   0x999   4
 "-999"         16   -0x999  4
@@ -257,17 +258,11 @@
 "-100"         2    -4      4
 "z"            36   35      1
 # Not fully valid numbers
+"0x123"        16   0       1
 "100x10"       10   100     3
 "100DEAD"      10   100     3
-"-0X"          16   0       2
-" - 0X"        16   0       0
-" - 12"        10   0       0
-"    "         10   0       0
-" -  "         10   0       0
-" +"           10   0       0
-" +G"          10   0       0
-"G1 "          10   0       0
-" G1"          10   0       0
+"-0X0"         16   0       2
+" 42"          10   0       0
 
 
 # Begin testing for strbuf functions
@@ -468,6 +463,7 @@
 %>
 :strip_me             strip_this  exp
 "12---AB21"           "12"        "---AB21"
+"12---AB21"           "xx"        "12---AB21"
 
 => strbuf_rstrip
 <%
@@ -479,7 +475,7 @@
 :strip_me             strip_this  exp
 "12AC12 3121"         "A12"      "12AC12 3"
 "BA12---AB"           "AB"       "BA12---"
-
+"BA12---AB"           "xx"       "BA12---AB"
 
 => strbuf_strip
 <%
@@ -490,3 +486,4 @@
 %>
 :strip_me             strip_this  exp
 "12---AB"            "12AB"      "---"
+"12---AB"            "NOTX"      "12---AB"

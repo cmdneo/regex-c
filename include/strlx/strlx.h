@@ -78,10 +78,9 @@ str str_pop_first_split(str *s, str split_by);
 
 /**
  * @brief Converts str to long long int.
- * str can be have any number of leading whitespaces, can be prefixed with
- * + or - sign and can have prefix hexadecimal(0x and 0X) integers
- * just after the sign.
- * If an illegal char is detected then parsing stops there
+ * str can be prefixed with + or - sign.
+ * If an illegal char is detected then parsing stops there.
+ * NOTE: No prefixes allowed for numbers(like 0x for base 16).
  *
  * @param s
  * @param base one of 2-36 (inclusive)

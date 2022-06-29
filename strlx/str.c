@@ -266,35 +266,15 @@ isize str_to_ll(str s, int base, long long *num)
 
 	*num = 0;
 	long long mul = 1;
-	isize start = s.size;
+	isize start = 0;
 	isize end = 0;
 	str digs = str_substr(STR_DIGS_B36, 0, base);
-
-	for (isize i = 0; i < s.size; i++) {
-		if (!strlx_is_space(s.data[i])) {
-			start = i;
-			break;
-		}
-	}
-
-	/* String is only whitespaces or empty */
-	if (start == s.size)
-		return 0;
 
 	if (s.data[start] == '-') {
 		start++;
 		mul = -1;
 	} else if (s.data[start] == '+')
 		start++;
-
-	if (base == 16 && str_starts_with_case(str_substr(s, start, s.size),
-					       (str)M_str("0x"))) {
-		start += 2;
-		/* If no valid digit just after the prefix then x|X of the prefix is
-		   an invalid char and 0 of the prefix is assumed to be a digit */
-		if (start == s.size || !str_has_char(digs, s.data[start]))
-			return start - 1;
-	}
 
 	for (end = start; end < s.size; end++) {
 		if (!str_has_char_case(digs, s.data[end]))

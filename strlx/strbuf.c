@@ -29,6 +29,18 @@ static inline strbuf *strbuf_create_cap0()
 	return ret;
 }
 
+static void strbuf_auto_shrink(strbuf *s)
+{
+	assert_strbuf(s);
+
+	if (s->cap > s->size * 3) {
+		strbuf_resize(s, next_cap(s->size));
+		// Error(if any) is set by strbuf_resize
+	}
+
+	assert_strbuf(s);
+}
+
 static void strbuf_shift(strbuf *s, isize offset, isize shift_by)
 {
 	assert_strbuf(s);
@@ -274,6 +286,7 @@ void strbuf_remove(strbuf *s, isize start, isize end)
 
 	isize sub_size = end - start;
 	strbuf_shift(s, end, -sub_size);
+	strbuf_auto_shrink(s);
 
 	assert_strbuf(s);
 }
@@ -285,7 +298,7 @@ void strbuf_remove_prefix(strbuf *s, str pref)
 		return;
 
 	str tmp = str_remove_prefix(strbuf_to_str(s), pref);
-	strbuf_remove(s, 0, (isize)(tmp.data - s->data));
+	strbuf_remove(s, 0, (isize)(s->size - tmp.size));
 
 	assert_strbuf(s);
 }
@@ -297,7 +310,7 @@ void strbuf_remove_suffix(strbuf *s, str suff)
 		return;
 
 	str tmp = str_remove_suffix(strbuf_to_str(s), suff);
-	s->size = tmp.size;
+	strbuf_remove(s, tmp.size, s->size);
 
 	assert_strbuf(s);
 }
@@ -309,7 +322,7 @@ void strbuf_lstrip(strbuf *s, str chars)
 		return;
 
 	str tmp = str_lstrip(strbuf_to_str(s), chars);
-	strbuf_shift(s, tmp.data - s->data, s->data - tmp.data);
+	strbuf_remove(s, 0, (isize)(s->size - tmp.size));
 
 	assert_strbuf(s);
 }
@@ -321,7 +334,7 @@ void strbuf_rstrip(strbuf *s, str chars)
 		return;
 
 	str tmp = str_rstrip(strbuf_to_str(s), chars);
-	s->size = tmp.size;
+	strbuf_remove(s, tmp.size, s->size);
 
 	assert_strbuf(s);
 }
@@ -365,6 +378,7 @@ isize strbuf_replace(strbuf *s, str old, str new)
 		old_at = str_find_last(cp, old);
 		count++;
 	}
+	strbuf_auto_shrink(s);
 
 	assert_strbuf(s);
 	return count;
@@ -482,14 +496,13 @@ void strbuf_to_lower(strbuf *s)
 isize strbuf_to_ll(strbuf const *s, int base, long long *num)
 {
 	assert_strbuf(s);
-
 	return str_to_ll(strbuf_to_str(s), base, num);
 }
 
 void strbuf_print(strbuf const *s)
 {
 	assert_strbuf(s);
-	if (s->error)
+		if (s->error)
 		return;
 
 	for (isize i = 0; i < s->size; i++)
