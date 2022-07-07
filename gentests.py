@@ -103,16 +103,43 @@ C_MODULE_TMPL = string.Template(R"""/*
 
 $INCLUDE_STATEMENTS
 
+static size_t grand_total = 0;
+static size_t total_ok = 0;
+static size_t total_fail = 0;
+static size_t ntests = 0;
+static size_t cases_total = 0;
+static size_t cases_ok = 0;
+static size_t cases_fail = 0;
+static int exit_status = 0;
+
+static void judge_test_case(int result) {
+    grand_total++;
+    cases_total++;
+
+    if (result) {
+        cases_ok++;
+        total_ok++;
+        putchar('.');
+    } else {
+        cases_fail++;
+        total_fail++;
+        exit_status = 1;
+        putchar('x');
+    }
+    /* Add new line after 40 chars */
+    if (cases_total % 40 == 0)
+        putchar('\n');
+}
+
+static void init_test() {
+    ntests++;
+    cases_total = 0;
+    cases_ok = 0;
+    cases_fail = 0;
+}
+
 int main() {
-    size_t grand_total = 0;
-    size_t total_ok = 0;
-    size_t total_fail = 0;
-    size_t ntests = 0;
-    size_t cases_total = 0;
-    size_t cases_ok = 0;
-    size_t cases_fail = 0;
     int result = 0;
-    int exit_status = 0;
 
     printf("======= Start '%s' Test Module =======\n", "$MODULE_NAME");
 
@@ -134,11 +161,7 @@ $MODULE_CODE
 # Wraps several tests and shows end, start messages and submod summary
 # NEEDS: TEST_CODE, TEST_NAME
 C_WRAP_TESTS_TMPL = string.Template(R"""
-    ntests++;
-    cases_total = 0;
-    cases_ok = 0;
-    cases_fail = 0;
-
+    init_test();
     printf("=> %zu: TEST '%s'\n", ntests, "$TEST_NAME");
 
 $TEST_CODE
@@ -159,25 +182,11 @@ $TEST_CODE
 # truth value indicating the success/failure of the test. For example:
 # result = add(2, 4) == 6;
 C_TEST_TMPL = string.Template(R"""
-    grand_total++;
-    cases_total++;
     result = 0;
-
+    {
 $SINGLE_TEST_CODE
-
-    if (result) {
-        cases_ok++;
-        total_ok++;
-        putchar('.');
-    } else {
-        cases_fail++;
-        total_fail++;
-        exit_status = 1;
-        putchar('x');
     }
-    /* Add new line after 40 chars */
-    if (cases_total % 40 == 0)
-        putchar('\n');
+    judge_test_case(result);
 """)
 
 

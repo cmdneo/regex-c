@@ -13,6 +13,9 @@ if (MSVC)
 	add_compile_options(/W4)
 else()
 	add_compile_options(-Wall -Wextra -Wnull-dereference -Wshadow -Wformat=2 -pedantic)
+	# For UBSAN, uncomment if needed during testing
+	# add_compile_options(-fsanitize=undefined)
+	# add_link_options(-fsanitize=undefined)
 endif()
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
