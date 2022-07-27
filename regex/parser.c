@@ -68,24 +68,21 @@ static egraph_T *egraph_create()
 	return ret;
 }
 
-static void egraph_destroy(egraph_T **eg)
+static void egraph_destroy(egraph_T *eg)
 {
 	assert(eg);
-	assert(*eg);
-	egraph_T *tmp = *eg;
 
-	for (int i = 0; i < tmp->nnodes; i++) {
-		egraph_T *tmp_node = &tmp->nodes[i];
-		egraph_destroy(&tmp_node);
-	}
+	for (int i = 0; i < eg->nnodes; i++)
+		egraph_destroy(&eg->nodes[i]);
 
-	if (tmp->is_cclass)
-		strbuf_destroy(&tmp->cclass_chars);
-	if (tmp->nodes != NULL)
-		FREE(tmp->nodes);
-
-	FREE(tmp);
-	*eg = NULL;
+	if (eg->is_cclass)
+		strbuf_destroy(&eg->cclass_chars);
+	// Free immediate children nodes
+	if (eg->nodes != NULL)
+		FREE(eg->nodes);
+	// Free itself if root node
+	if (eg->prev == NULL)
+		FREE(eg);
 }
 
 /**
@@ -101,7 +98,7 @@ static egraph_T *egraph_insert(egraph_T *eg, egraph_T *node)
 	assert(node);
 
 	if (eg->nnodes >= eg->nodecap) {
-		int newcap = (newcap == 0) ? 1 : (eg->nodecap * 2);
+		int newcap = (eg->nodecap == 0) ? 1 : (eg->nodecap * 2);
 		egraph_T *tmp = N_REALLOC(eg->nodes, newcap);
 		if (tmp == NULL) {
 			FREE(eg->nodes);
@@ -110,6 +107,14 @@ static egraph_T *egraph_insert(egraph_T *eg, egraph_T *node)
 		}
 		eg->nodes = tmp;
 		eg->nodecap = newcap;
+
+		// Update back-references (prevents use-after-free)
+		// So that children do not point to a parent whose address
+		// might have changed due to reallocation
+		for (int i = 0; i < eg->nnodes; i++) {
+			for (int j = 0; j < eg->nodes[i].nnodes; j++)
+				eg->nodes[i].nodes[j].prev = &eg->nodes[i];
+		}
 	}
 
 	eg->nodes[eg->nnodes] = (egraph_T){ 0 };
@@ -166,15 +171,14 @@ static parser_T *pstate_create(strbuf const *pattern)
 	return ret;
 }
 
-static void pstate_destroy(parser_T **self)
+static void pstate_destroy(parser_T *self)
 {
 	assert(self);
-	parser_T *tmp = *self;
-	assert(tmp);
-	assert(tmp->tokens);
+	assert(self->tokens);
 
-	FREE(tmp->tokens);
-	FREE(*self);
+	egraph_destroy(self->exec_graph);
+	FREE(self->tokens);
+	FREE(self);
 }
 
 /**
@@ -635,7 +639,6 @@ static egraph_T *parse_gen_exec_graph(parser_T *self, egraph_T *parent)
 		case RE_TC_LPAREN:
 			// Insert an empty node for group
 			prev = egraph_insert(prev, &EMPTY_NODE);
-			DEBUG("%p\n", (void *)prev->prev);
 			prev = parse_gen_exec_graph(self, prev);
 			break;
 
@@ -677,7 +680,7 @@ egraph_T *re_parse(strbuf const *pattern)
 
 	egraph_T *ret = egraph_create();
 	if (ret == NULL) {
-		pstate_destroy(&self);
+		pstate_destroy(self);
 		return NULL;
 	}
 	self->exec_graph = ret;
@@ -704,11 +707,11 @@ egraph_T *re_parse(strbuf const *pattern)
 	}
 	egraph_debug(self->exec_graph, 0);
 
-	pstate_destroy(&self);
+	pstate_destroy(self);
 	return ret;
 
 err_return:
 	printf("%d ERROR: %s\n", self->at, regex_error(self->error));
-	pstate_destroy(&self);
+	pstate_destroy(self);
 	return ret;
 }
