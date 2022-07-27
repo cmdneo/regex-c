@@ -13,7 +13,7 @@ chars = {
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
     "RE_TC_PCC_ASCII": ("\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\x0c\r"
                         "\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a"
-                        "\x1b\x1c\x1d\x1e\x1f " "!\"#$%%&\'()*+,-./"
+                        "\x1b\x1c\x1d\x1e\x1f " "!\"#$%&\'()*+,-./"
                         "0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
                         "abcdefghijklmnopqrstuvwxyz{|}~\x7f"),
     "RE_TC_PCC_BLANK": (" \t"),
@@ -39,94 +39,140 @@ chars = {
 # ##### Tokens #####
 
 meta = "[]{}()^$.*?+|\\"
-
-toks = R"""
-RE_TC_CTX_B = \b
-
-RE_TC_ESC_LBRACKET = \[ = [ = ORD
-
-RE_TC_PCC_ALNUM = [:alnum:]
-RE_TC_PCC_ALPHA = [:alpha:]
-RE_TC_PCC_ASCII = [:ascii:]
-RE_TC_PCC_BLANK = [:blank:]
-RE_TC_PCC_CNTRL = [:cntrl:]
-RE_TC_PCC_DIGIT = [:digit:]
-RE_TC_PCC_GRAPH = [:graph:]
-RE_TC_PCC_LOWER = [:lower:]
-RE_TC_PCC_PRINT = [:print:]
-RE_TC_PCC_PUNCT = [:punct:]
-RE_TC_PCC_SPACE = [:space:]
-RE_TC_PCC_UPPER = [:upper:],
-RE_TC_PCC_WORD = [:word:]
-RE_TC_PCC_XDIGIT = [:xdigit:]
-
-RE_TC_ESC_RBRACKET = \] = ] = ORD
-RE_TC_ESC_LBRACE = \{ = { = ORD
-RE_TC_ESC_RBRACE = \} = } = ORD
-RE_TC_ESC_LPAREN = \( = ( = ORD
-RE_TC_ESC_RPAREN = \) = ) = ORD
-RE_TC_ESC_CARET = \^ = ^ = ORD
-RE_TC_ESC_DOLLAR = \$ = $ = ORD
-RE_TC_ESC_QMARK = \? = ? = ORD
-RE_TC_ESC_PLUS = \+ = + = ORD
-RE_TC_ESC_ASTERISK = \* = * = ORD
-RE_TC_ESC_PERIOD = \. = . = ORD
-RE_TC_ESC_BAR = \| = | = ORD
-RE_TC_ESC_BSLASH = \\ = \\ = ORD
-
-RE_TC_PLUS_LAZY = +?
-RE_TC_QMARK_LAZY = ??
-RE_TC_ASTERISK_LAZY = *?
+TC_ALWAYS_ORD_TAG = "RE_TC_ESC"
 
 
-RE_TC_DIGIT = \d
-RE_TC_NON_DIGIT = \D
-RE_TC_WORD_CHAR = \w
-RE_TC_NON_WORD_CHAR = \W
-RE_TC_WHITESPACE = \s
-RE_TC_NON_WHITESPACE = \S
-RE_TC_BEGIN = \A
-RE_TC_END = \Z
-RE_TC_BOUND_WORD = \b
-RE_TC_BOUND_NON_WORD = \B
+# Name        match_c(no-esc)        value(opt, C-string format)
+toks_data = R"""
+RE_TC_PCC_ALNUM           [:alnum:]
+RE_TC_PCC_ALPHA           [:alpha:]
+RE_TC_PCC_ASCII           [:ascii:]
+RE_TC_PCC_BLANK           [:blank:]
+RE_TC_PCC_CNTRL           [:cntrl:]
+RE_TC_PCC_DIGIT           [:digit:]
+RE_TC_PCC_GRAPH           [:graph:]
+RE_TC_PCC_LOWER           [:lower:]
+RE_TC_PCC_PRINT           [:print:]
+RE_TC_PCC_PUNCT           [:punct:]
+RE_TC_PCC_SPACE           [:space:]
+RE_TC_PCC_UPPER           [:upper:]
+RE_TC_PCC_WORD            [:word:]
+RE_TC_PCC_XDIGIT          [:xdigit:]
 
-RE_TC_BELL = \a = \a
-RE_TC_BS = \b = \b
-RE_TC_FF = \f = \f
-RE_TC_NL = \n = \n
-RE_TC_CR = \r = \r
-RE_TC_VT = \v = \v
-RE_TC_TAB = \t = \t
-RE_TC_HEX = \x
+RE_TC_ESC_RBRACKET        \]    ]
+RE_TC_ESC_LBRACKET        \[    [
+RE_TC_ESC_LBRACE          \{    {
+RE_TC_ESC_RBRACE          \}    }
+RE_TC_ESC_LPAREN          \(    (
+RE_TC_ESC_RPAREN          \)    )
+RE_TC_ESC_CARET           \^    ^
+RE_TC_ESC_DOLLAR          \$    $
+RE_TC_ESC_QMARK           \?    ?
+RE_TC_ESC_PLUS            \+    +
+RE_TC_ESC_ASTERISK        \*    *
+RE_TC_ESC_PERIOD          \.    .
+RE_TC_ESC_BAR             \|    |
+RE_TC_ESC_BSLASH          \\    \\
 
-RE_TC_LBRACKET = [= [
-RE_TC_RBRACKET = ]= ]
-RE_TC_LBRACE = {= {
-RE_TC_RBRACE = }= }
-RE_TC_LPAREN = (= (
-RE_TC_RPAREN = )= )
-RE_TC_CARET = ^= ^
-RE_TC_DOLLAR = $= $
-RE_TC_QMARK = ?= ?
-RE_TC_PLUS = += +
-RE_TC_ASTERISK = *= *
-RE_TC_PERIOD = .= .
-RE_TC_BAR = |= |
-RE_TC_BSLASH = \= \\
+RE_TC_PLUS_LAZY           +?
+RE_TC_QMARK_LAZY          ??
+RE_TC_ASTERISK_LAZY       *?
 
-""".split("\n")
+RE_TC_CC_DIGIT            \d
+RE_TC_CC_NON_DIGIT        \D
+RE_TC_CC_WORD_CHAR        \w
+RE_TC_CC_NON_WORD_CHAR    \W
+RE_TC_CC_WHITESPACE       \s
+RE_TC_CC_NON_WHITESPACE   \S
+
+RE_TC_ANC_BEGIN           \A
+RE_TC_ANC_END             \Z
+RE_TC_ANC_BOUND_WORD      \b
+RE_TC_ANC_BOUND_NON_WORD  \B
+
+RE_TC_ESC_BELL            \a    \a
+RE_TC_ESC_BS              \b    \b
+RE_TC_ESC_FF              \f    \f
+RE_TC_ESC_NL              \n    \n
+RE_TC_ESC_CR              \r    \r
+RE_TC_ESC_VT              \v    \v
+RE_TC_ESC_TAB             \t    \t
+# Hex-digits are parsed later, it only detects prefix for that
+RE_TC_ESC_HEX             \x
+
+# Meta characters
+# Value needed as they maybe converted to ordinary types as per context
+RE_TC_LBRACKET            [    [
+RE_TC_RBRACKET            ]    ]
+RE_TC_LBRACE              {    {
+RE_TC_RBRACE              }    }
+RE_TC_LPAREN              (    (
+RE_TC_RPAREN              )    )
+RE_TC_CARET               ^    ^
+RE_TC_DOLLAR              $    $
+RE_TC_QMARK               ?    ?
+RE_TC_PLUS                +    +
+RE_TC_ASTERISK            *    *
+RE_TC_PERIOD              .    .
+RE_TC_BAR                 |    |
+RE_TC_BSLASH              \    \\
+
+RE_TC_ORD
+RE_TC_GNUM
+"""
+# Remove empty lines and comments
+tokens = list(filter(
+    lambda x: not x.startswith("#") and x.strip(),
+    toks_data.split("\n")
+))
 
 
-# ###########################################################
 # ################# START CODE GENERATION ###################
-# ###########################################################
 
-# POSIX char class data array generation
+# Token enum generation
 
 print("""/* Start generated code. Generated by: gentokens.py */
 /* clang-format off */
+enum re_token_code {""")
 
-static const str RE_PCC_CHARS[] = {""")
+for tok in tokens:
+    print(f"\t{tok.split()[0]},")
+
+print("};\n")
+
+# Token array generation
+
+print("static const token_T RE_TOKENS[] = {")
+
+for tok in tokens:
+    fields = tok.split()
+    if len(fields) == 1:
+        continue
+
+    tcode, val = fields[0], fields[1]
+    ttype = tcode
+    if ttype.startswith(TC_ALWAYS_ORD_TAG):
+        ttype = "RE_TC_ORD"
+
+    if len(fields) == 3:
+        fields[2] = fields[2].replace("'", "\\'")
+        print(
+            f"\t[{tcode}] = {{ .chars = M_str({repr_double(val)}), "
+            f".type = {ttype}, .value = '{(fields[2])}' }},")
+
+    elif len(fields) == 2:
+        print(
+            f"\t[{tcode}] = {{ .chars = M_str({repr_double(val)}), "
+            f".type = {ttype} }},"
+        )
+    else:
+        raise ValueError
+
+print("};\n")
+
+# POSIX-char-class data array generation
+
+print("static const str RE_PCC_CHARS[] = {")
 
 for k, v in chars.items():
     print(f"\t[{k}] = M_str(")
@@ -137,35 +183,7 @@ for k, v in chars.items():
         print("\t\t" + repr_double(line))
     print("\t),")
 
-print("};\n")
+print("""};
 
-# Tokens generation
-
-print("static const token_T RE_TOKENS[] = {")
-
-for tok in toks:
-    if tok.strip() == "":
-        continue
-    fields = tok.split("=")
-    tt, val = fields[0].strip(), fields[1].strip()
-
-    if len(fields) == 4 and fields[3].strip() == "ORD":
-        print(f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), "
-              f".type = RE_TT_ORD, .value = '{(fields[2].strip())}' }},"
-              )
-
-    elif len(fields) == 3:
-        print(
-            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), .type = {tt}, "
-            f".value = '{(fields[2].strip())}' }},")
-
-    else:
-        print(
-            f"\t[{tt}] = {{ .chars = M_str({repr_double(val)}), "
-            f".type = {tt} }},"
-        )
-
-print("};")
-
-print("""/* clang-format on */
+/* clang-format on */
 /* End generated code. Generated by: gentokens.py */""")

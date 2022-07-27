@@ -2,7 +2,6 @@
 #define REGEX_PARSER_H_INTERNAL
 
 #include "strlx/strlx.h"
-#include "dsa.h"
 
 /* -- Data structures -- */
 typedef struct token_T token_T;
@@ -16,11 +15,10 @@ struct egraph_T {
 	unsigned lazy : 1;
 	unsigned capture : 1;
 	unsigned atomic : 1;
-	unsigned anyone : 1;
 	unsigned anychar : 1;
 	unsigned is_group : 1;
 	unsigned is_cclass : 1;
-	unsigned is_class_inv : 1;
+	unsigned is_cclass_inv : 1;
 	int error;
 	int min;
 	int max;
@@ -29,20 +27,19 @@ struct egraph_T {
 	int nnodes;
 	int nodecap;
 	strbuf *cclass_chars; /** if is_cclass, otherwise NULL */
-	egraph_T *nodes; /** last node is the next node */
+	egraph_T *nodes; /** last node is the next node, for now */
 	egraph_T *prev;
 };
 
-typedef struct pstate_T {
+typedef struct parser_T {
 	int error;
 	int ntokens;
 	int ctx;
 	int at; /** tracker */
 	egraph_T *exec_graph;
-	pairs_T *parens;
 	token_T *tokens;
 	strbuf const *pattern;
-} pstate_T;
+} parser_T;
 
 typedef struct regex {
 	strbuf const *pattern;
@@ -58,7 +55,6 @@ egraph_T *re_parse(strbuf const *pattern);
 /* -- Config & Data -- */
 
 #define EMPTY_NODE ((egraph_T){ 0 })
-static const str RE_CTX_CHARS = M_str("b");
 
 enum re_extension {
 	RE_EXT_ATOMIC,

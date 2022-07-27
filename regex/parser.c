@@ -5,10 +5,11 @@
 #include "strlx/strlx.h"
 #include "regex/errors.h"
 
-#include "dsa.h"
 #include "mem.h"
 #include "tokens.h"
 #include "parser.h"
+
+#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 
 static inline int token_cmp(token_T const *a, token_T const *b)
 {
@@ -23,7 +24,7 @@ static inline int token_cmp(token_T const *a, token_T const *b)
  * @param end when to stop search, negative for full
  * @return int Position of the matching token in pattern, -1 if not found
  */
-static int pstate_token_pos(pstate_T const *self, token_T const *tok, int end)
+static int pstate_token_pos(parser_T const *self, token_T const *tok, int end)
 {
 	assert(self);
 	if (end < 0 || end > self->ntokens)
@@ -44,7 +45,7 @@ static int pstate_token_pos(pstate_T const *self, token_T const *tok, int end)
  * @param end when to stop search, negative for full
  * @return int Index of the matching token in self->tokens, -1 if not found
  */
-static int pstate_token_index(pstate_T const *self, token_T const *tok, int end)
+static int pstate_token_index(parser_T const *self, token_T const *tok, int end)
 {
 	assert(self);
 	if (end < 0 || end > self->ntokens)
@@ -90,43 +91,65 @@ static void egraph_destroy(egraph_T **eg)
 /**
  * @brief Inserts a new node by shallow copying node
  * 
- * @param prev
- * @param node
- * @return egraph_T
+ * @param eg
+ * @param node shallow copied
+ * @return egraph_T pointer to the newly inserted node
  */
-static egraph_T *egraph_insert(egraph_T *prev, egraph_T *node)
+static egraph_T *egraph_insert(egraph_T *eg, egraph_T *node)
 {
-	assert(prev);
+	assert(eg);
 	assert(node);
 
-	if (prev->nodecap == prev->nnodes) {
-		int newcap = prev->nodecap * 2 + (prev->nodecap == 0);
-		egraph_T *tmp = N_REALLOC(prev->nodes, newcap);
-
+	if (eg->nnodes >= eg->nodecap) {
+		int newcap = (newcap == 0) ? 1 : (eg->nodecap * 2);
+		egraph_T *tmp = N_REALLOC(eg->nodes, newcap);
 		if (tmp == NULL) {
-			free(prev->nodes);
-			prev->nodes = NULL;
+			FREE(eg->nodes);
+			eg->nodes = NULL;
 			return NULL;
 		}
-
-		prev->nodes = tmp;
-		prev->nodecap = newcap;
+		eg->nodes = tmp;
+		eg->nodecap = newcap;
 	}
 
-	prev->nodes[prev->nnodes] = (egraph_T){ 0 };
-	egraph_T *new_node = &prev->nodes[prev->nnodes];
+	eg->nodes[eg->nnodes] = (egraph_T){ 0 };
+	egraph_T *new_node = &eg->nodes[eg->nnodes];
 	*new_node = *node;
-	new_node->prev = prev;
-	prev->nnodes++;
+	new_node->prev = eg;
+	eg->nnodes++;
 
 	return new_node;
 }
 
-static pstate_T *pstate_create(strbuf const *pattern)
+static void egraph_debug(egraph_T *eg, int depth)
+{
+	for (int i = 0; i < depth - 1; i++)
+		DEBUG("    ");
+	if (depth > 0) {
+		DEBUG("prev %p\n", (void *)(eg->prev));
+		if (eg->prev && eg->prev->nnodes > 0 &&
+		    &eg->prev->nodes[eg->prev->nnodes - 1] == eg)
+			DEBUG(u8"└───");
+		else
+			DEBUG(u8"├───");
+	}
+
+	DEBUG("[%d-%d]%c ", eg->min, eg->max, (eg->lazy ? '?' : '>'));
+	if (eg->is_group)
+		DEBUG("()");
+	else if (!eg->anychar)
+		DEBUG("%c", eg->value);
+	DEBUG("\n");
+
+	for (int i = 0; i < eg->nnodes; i++)
+		egraph_debug(&eg->nodes[i], depth + 1);
+}
+
+static parser_T *pstate_create(strbuf const *pattern)
 {
 	assert(pattern);
 
-	pstate_T *ret = ALLOC(ret);
+	parser_T *ret = ALLOC(ret);
 	if (ret == NULL) {
 		return NULL;
 	}
@@ -135,30 +158,21 @@ static pstate_T *pstate_create(strbuf const *pattern)
 		FREE(ret);
 		return NULL;
 	}
-	pairs_T *parens = pairs_create();
-	if (parens == NULL) {
-		FREE(ret);
-		FREE(tokens);
-		return NULL;
-	}
-	*ret = (pstate_T){
+	*ret = (parser_T){
 		.tokens = tokens,
-		.parens = parens,
 		.pattern = pattern,
 	};
 
 	return ret;
 }
 
-static void pstate_destroy(pstate_T **self)
+static void pstate_destroy(parser_T **self)
 {
 	assert(self);
-	pstate_T *tmp = *self;
+	parser_T *tmp = *self;
 	assert(tmp);
-	assert(tmp->parens);
 	assert(tmp->tokens);
 
-	pairs_destroy(&tmp->parens);
 	FREE(tmp->tokens);
 	FREE(*self);
 }
@@ -171,40 +185,41 @@ static void pstate_destroy(pstate_T **self)
  * @param tok 
  * @return int Error code (success=0)
  */
-static int parse_hex_seq(pstate_T *self, token_T *tok)
+static int parse_hex_seq(parser_T *self, token_T *tok)
 {
 	assert(self);
 	assert(tok);
 
-	long long num;
-	int const ndigs = 2;
-	str hexs = strbuf_substr(self->pattern, self->at, self->at + ndigs);
+	int const NDIGITS = 2;
+	long long num = 0;
+	str hexs = strbuf_substr(self->pattern, self->at, self->at + NDIGITS);
 
-	if (str_to_ll(hexs, 16, &num) != ndigs)
+	if (hexs.size > 0 && !str_has_char(STR_HEX_DIGITS, hexs.data[0]))
+		return REGEX_INVALID_HEX;
+	if (str_to_ll(hexs, 16, &num) != NDIGITS)
 		return REGEX_INVALID_HEX;
 	if (num > CHAR_MAX)
 		return REGEX_HEX_TOO_BIG;
 
-	tok->type = RE_TT_ORD;
+	tok->type = RE_TC_ORD;
 	tok->value = num;
-
 	tok->chars = strbuf_substr(self->pattern, self->at - tok->chars.size,
-				   self->at + ndigs);
-	self->at += ndigs;
+				   self->at + NDIGITS);
+	self->at += NDIGITS;
 	return 0;
 }
 
 /**
- * @brief Parses number esc-seq, which can be: group num or octal num
+ * @brief Parses number esc-seq, which can be: group-number or octal-number
  * As decided by the Format:
  * ooo | 0o | 0     => Octal number, (o=octal-digit)
  * 1-99 (inclusive) => Group number
  * 
  * @param self
  * @param tok
- * @return int Error code (success=0)
+ * @return int Error code
  */
-static int parse_dig_seq(pstate_T *self, token_T *tok)
+static int parse_dig_seq(parser_T *self, token_T *tok)
 {
 	assert(self);
 	assert(tok);
@@ -223,21 +238,19 @@ static int parse_dig_seq(pstate_T *self, token_T *tok)
 		str_to_ll(strbuf_substr(pat, self->at, self->at + 2), 10, &dec);
 
 	if (ndecs == 0 || ndecs == 0)
-		return REGEX_ILLEGAL_CHAR;
+		return REGEX_ILLEGAL_ESC;
 
 	if (pat->data[self->at] == '0' || nocts == 3) {
-		assert(0 <= oct && oct <= 0777);
-		tok->type = RE_TT_ORD;
-		tok->value = oct;
-		tok->chars = strbuf_substr(pat, tok_start, self->at + nocts);
-
 		if (oct > CHAR_MAX)
 			return REGEX_OCT_TOO_BIG;
-
+		tok->type = RE_TC_ORD;
+		tok->value = oct;
+		tok->chars = strbuf_substr(pat, tok_start, self->at + nocts);
 		self->at += nocts;
 	} else {
-		assert(1 <= dec && dec <= 99);
-		tok->type = RE_TT_GNUM;
+		if (!(1 <= dec && dec <= 99))
+			return REGEX_INVALID_GROUP;
+		tok->type = RE_TC_GNUM;
 		tok->value = dec;
 		tok->chars = strbuf_substr(pat, tok_start, self->at + ndecs);
 		self->at += ndecs;
@@ -246,132 +259,115 @@ static int parse_dig_seq(pstate_T *self, token_T *tok)
 	return 0;
 }
 
-static int parse_ctx_tok(token_T *tok, enum re_ctx ctx)
-{
-	if (ctx == RE_CTX_NONE) {
-		switch (tok->type) {
-		case RE_TC_CTX_B:
-			tok->type = RE_TC_BOUND_WORD;
-			tok->value = 0;
-			break;
-
-		default:
-			assert(!"Illegal CTX token passed");
-			break;
-		}
-	}
-
-	else if (ctx == RE_CTX_BKT) {
-		switch (tok->type) {
-		case RE_TC_CTX_B:
-			tok->type = RE_TC_BS;
-			tok->value = RE_TOKENS[RE_TC_BS].value;
-			break;
-
-		default:
-			assert(!"Illegal CTX token passed");
-			break;
-		}
-	}
-
-	return 0;
-}
-
-static int parse_gen_tokens(pstate_T *self)
+/**
+ * @brief Generates the next token and pushes it to self->tokens
+ *
+ * @param self
+ * @return int
+ */
+static int parse_gen_next_token(parser_T *self)
 {
 	assert(self);
 
-	strbuf const *pat = self->pattern;
+	const strbuf *pat = self->pattern;
+	int error = REGEX_NO_TOKENS;
+	int old_at = self->at;
+	token_T *tok = &self->tokens[self->ntokens];
+	str slice = strbuf_substr(pat, self->at, pat->size);
 
-	while (self->at < pat->size) {
-		self->tokens[self->ntokens] = (token_T){ 0 };
-		token_T *tok = &self->tokens[self->ntokens++];
-		str slice = strbuf_substr(pat, self->at, pat->size);
-		int error = REGEX_NO_MATCH;
+	// Match listed tokens(might be partial)
+	for (int j = 0; j < RE_NTOKENS; j++) {
+		if (!str_starts_with(slice, RE_TOKENS[j].chars))
+			continue;
 
-		// Match metachars and multichar tokens(might be partial)
-		for (int j = 0; j < RE_NTOKENS; j++) {
-			if (!str_starts_with(slice, RE_TOKENS[j].chars))
-				continue;
+		*tok = RE_TOKENS[j];
+		tok->pos = self->at;
+		self->at += tok->chars.size;
+		error = 0;
+		break;
+	}
 
-			*tok = RE_TOKENS[j];
-			tok->pos = self->at;
-			self->at += tok->chars.size;
-			error = 0;
-			break;
-		}
+	// Parse hex esc-seq digits
+	if (tok->type == RE_TC_ESC_HEX)
+		error = parse_hex_seq(self, tok);
+	else if (tok->type == RE_TC_BSLASH) {
+		// Parse digit esc-seq (like \1, \024)
+		if (self->at < pat->size &&
+		    str_has_char(STR_DIGITS, pat->data[self->at]))
+			error = parse_dig_seq(self, tok);
+		// Trailing backslash or no valid character after the backslash
+		else
+			error = REGEX_ILLEGAL_ESC;
+	}
+	// Other ordinary ASCII character
+	else if (error == REGEX_NO_TOKENS && slice.size > 0) {
+		*tok = (token_T){
+			.value = slice.data[0],
+			.type = RE_TC_ORD,
+			.chars = str_substr(slice, 0, 1),
+			.pos = self->at,
+		};
+		self->at++;
+		error = 0;
+	}
 
-		// Parse hex escape sequence
-		if (tok->type == RE_TC_HEX)
-			error = parse_hex_seq(self, tok);
-		else if (tok->type == RE_TC_BSLASH) {
-			// Parse digit esc-seq, as esc-digits(like \1)
-			if (self->at < pat->size &&
-			    str_has_char(STR_DIGITS, pat->data[self->at]))
-				error = parse_dig_seq(self, tok);
-			// Backslash with no valid escape character or trailing backslash
-			else
-				error = REGEX_ILLEGAL_CHAR;
-		}
-		// Other ordinary ASCII character
-		else if (error == REGEX_NO_MATCH && slice.size > 0) {
-			*tok = (token_T){
-				.value = slice.data[0],
-				.type = RE_TT_ORD,
-				.chars = str_substr(slice, 0, 1),
-				.pos = self->at,
-			};
-			self->at++;
-			error = 0;
-		}
+	if (error)
+		self->at = old_at;
+	else
+		self->ntokens++;
 
+	return error;
+}
+
+static int parse_gen_tokens(parser_T *self)
+{
+	assert(self);
+
+	bool in_cclass = false;
+
+	while (self->at < self->pattern->size) {
+		int error = parse_gen_next_token(self);
 		if (error)
 			return error;
-	}
+		token_T *last = &self->tokens[self->ntokens - 1];
 
-	self->at = 0;
-	assert(self->ntokens <= pat->size);
+		if (last->type == RE_TC_LBRACKET)
+			in_cclass = true;
+		else if (last->type == RE_TC_RBRACKET)
+			in_cclass = false;
 
-	return 0;
-}
+		if (!in_cclass)
+			continue;
+		// If inside [...] then all metachars(except ']') are oridnary
+		switch (last->type) {
+		case RE_TC_LBRACKET:
+		case RE_TC_LBRACE:
+		case RE_TC_RBRACE:
+		case RE_TC_LPAREN:
+		case RE_TC_RPAREN:
+		case RE_TC_CARET:
+		case RE_TC_DOLLAR:
+		case RE_TC_QMARK:
+		case RE_TC_PLUS:
+		case RE_TC_ASTERISK:
+		case RE_TC_PERIOD:
+		case RE_TC_BAR:
+			last->type = RE_TC_ORD;
+			break;
 
-static int parse_gen_parens_span(pstate_T *self)
-{
-	assert(self);
+		case RE_TC_ANC_BOUND_WORD:;
+			int tmp = last->pos;
+			*last = RE_TOKENS[RE_TC_ESC_BS];
+			last->pos = tmp;
+			break;
 
-	stack_T *stk = stack_create();
-	if (stk == NULL)
-		return REGEX_NO_MEM;
-
-	int paren = 0; /* 0 if paired */
-
-	for (int i = 0; i < self->ntokens; i++) {
-		self->at = i;
-		token_T *tok = &self->tokens[i];
-
-		if (tok->type == RE_TC_LPAREN) {
-			paren++;
-
-			if (stack_push(stk, i) != 0)
-				return REGEX_NO_MEM;
-		}
-
-		else if (tok->type == RE_TC_RPAREN) {
-			paren--;
-
-			if (paren < 0) {
-				stack_destroy(&stk);
-				return REGEX_EXTRA_PAREN;
-			}
-			pairs_insert(self->parens, stack_pop(stk), i);
+		default:
+			break;
 		}
 	}
 
-	if (paren > 0)
-		return REGEX_NO_CLOSING_PAREN;
-
-	stack_destroy(&stk);
 	self->at = 0;
+	assert(self->ntokens <= self->pattern->size);
 
 	return 0;
 }
@@ -383,7 +379,7 @@ static int parse_gen_parens_span(pstate_T *self)
  * @param node 
  * @return int 
  */
-static int parse_char_class(pstate_T *self, egraph_T *node)
+static int parse_char_class(parser_T *self, egraph_T *node)
 {
 	assert(self);
 	assert(node);
@@ -394,40 +390,40 @@ static int parse_char_class(pstate_T *self, egraph_T *node)
 
 	// Chnage(as needed) and verify token type
 	switch (tok->type) {
-	case RE_TC_NON_DIGIT:
+	case RE_TC_CC_NON_DIGIT:
 		inverted = true;
 		/* Fallthrough */
-	case RE_TC_DIGIT:
+	case RE_TC_CC_DIGIT:
 		tok->type = RE_TC_PCC_DIGIT;
 		break;
 
-	case RE_TC_NON_WHITESPACE:
+	case RE_TC_CC_NON_WHITESPACE:
 		inverted = true;
 		/* Fallthrough */
-	case RE_TC_WHITESPACE:
+	case RE_TC_CC_WHITESPACE:
 		tok->type = RE_TC_PCC_SPACE;
 		break;
 
-	case RE_TC_NON_WORD_CHAR:
+	case RE_TC_CC_NON_WORD_CHAR:
 		inverted = true;
 		/* Fallthrough */
-	case RE_TC_WORD_CHAR:
+	case RE_TC_CC_WORD_CHAR:
 		tok->type = RE_TC_PCC_WORD;
 		break;
 
-	case RE_TC_PCC_ALNUM: /* Fallthrough */
-	case RE_TC_PCC_ALPHA: /* Fallthrough */
-	case RE_TC_PCC_ASCII: /* Fallthrough */
-	case RE_TC_PCC_BLANK: /* Fallthrough */
-	case RE_TC_PCC_CNTRL: /* Fallthrough */
-	case RE_TC_PCC_DIGIT: /* Fallthrough */
-	case RE_TC_PCC_GRAPH: /* Fallthrough */
-	case RE_TC_PCC_LOWER: /* Fallthrough */
-	case RE_TC_PCC_PRINT: /* Fallthrough */
-	case RE_TC_PCC_PUNCT: /* Fallthrough */
-	case RE_TC_PCC_SPACE: /* Fallthrough */
-	case RE_TC_PCC_UPPER: /* Fallthrough */
-	case RE_TC_PCC_WORD: /* Fallthrough */
+	case RE_TC_PCC_ALNUM:
+	case RE_TC_PCC_ALPHA:
+	case RE_TC_PCC_ASCII:
+	case RE_TC_PCC_BLANK:
+	case RE_TC_PCC_CNTRL:
+	case RE_TC_PCC_DIGIT:
+	case RE_TC_PCC_GRAPH:
+	case RE_TC_PCC_LOWER:
+	case RE_TC_PCC_PRINT:
+	case RE_TC_PCC_PUNCT:
+	case RE_TC_PCC_SPACE:
+	case RE_TC_PCC_UPPER:
+	case RE_TC_PCC_WORD:
 	case RE_TC_PCC_XDIGIT:
 		break; /* Nothing */
 
@@ -436,8 +432,8 @@ static int parse_char_class(pstate_T *self, egraph_T *node)
 		break;
 	}
 
-	node->is_cclass = 1;
-	node->is_class_inv = inverted;
+	node->is_cclass = true;
+	node->is_cclass_inv = inverted;
 
 	return 0;
 }
@@ -445,12 +441,12 @@ static int parse_char_class(pstate_T *self, egraph_T *node)
 /**
  * @brief Parses range values inside braces{}
  * Format: {N} or {M,N} or {N,} => (N,M = +ve integers, base=10)
- * If not in this format then it({) will be converted to RE_TT_ORD type
+ * If not in this format then it({) will be converted to RE_TC_ORD type
  * 
  * @param self 
  * @return int 
  */
-static int parse_braces(pstate_T *self, egraph_T *node)
+static int parse_braces(parser_T *self, egraph_T *node)
 {
 	assert(self);
 	assert(node);
@@ -460,23 +456,23 @@ static int parse_braces(pstate_T *self, egraph_T *node)
 	int end_idx = pstate_token_index(self, &RE_TOKENS[RE_TC_RBRACE], -1);
 	// No closing brace or empty {}
 	if (end_idx == -1 || end_idx == self->at + 1) {
-		self->tokens[self->at].type = RE_TT_ORD;
+		self->tokens[self->at].type = RE_TC_ORD;
 		return 0;
 	}
 
-	long long min;
-	long long max;
+	long long min = 0;
+	long long max = 0;
 	int start = self->tokens[self->at].pos + 1;
 	int end = self->tokens[end_idx].pos;
 	int sep = pstate_token_pos(
-		self, &(token_T){ .value = ',', .type = RE_TT_ORD }, end_idx);
+		self, &(token_T){ .value = ',', .type = RE_TC_ORD }, end_idx);
 
 	// Verify format
 	for (int i = start; i < end; i++) {
 		if (i == sep)
 			continue;
 		if (!str_has_char(STR_DIGITS, self->pattern->data[i])) {
-			self->tokens[self->at].type = RE_TT_ORD;
+			self->tokens[self->at].type = RE_TC_ORD;
 			return 0;
 		}
 	}
@@ -514,14 +510,14 @@ static int parse_braces(pstate_T *self, egraph_T *node)
  * @brief Parses [.......]
  *
  * Parses following things inside []:
- * Char ranges(R): <char-1>-<char-2> (inclusive), where <char-1> <= <char-2>
+ * Char ranges(R): <char-1> - <char-2> (inclusive), where <char-1> <= <char-2>
  * Char classes(C): \d, \D, \w, \W, \s, \S
  * and Posix char classes(P)
  * 
  * @param self 
  * @return int
  */
-static int parse_brackets(pstate_T *self)
+static int parse_brackets(parser_T *self)
 {
 	assert(self);
 	assert(self->tokens[self->at].type == RE_TC_LBRACKET);
@@ -535,14 +531,13 @@ static int parse_brackets(pstate_T *self)
 	int inverted = 0;
 
 	if (token_cmp(&self->tokens[self->at + 1],
-		      &TOKEN_NEW(RE_TT_ORD, '^'))) {
+		      &TOKEN_NEW(RE_TC_ORD, '^'))) {
 	}
 
 	return 0;
 }
 
-static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
-				      int start, int end)
+static egraph_T *parse_gen_exec_graph(parser_T *self, egraph_T *parent)
 {
 	assert(self);
 	assert(parent);
@@ -553,12 +548,11 @@ static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
 	egraph_T *prev = parent;
 
 	parent->is_group = 1;
-	self->at = start;
 
-	for (int i = start; i < end; i++, self->at = i) {
-		token_T *tok = &self->tokens[i];
+	while (self->at < self->ntokens) {
+		token_T *tok = &self->tokens[self->at];
 
-		if (tok->type == RE_TT_ORD || tok->type == RE_TC_PERIOD) {
+		if (tok->type == RE_TC_ORD || tok->type == RE_TC_PERIOD) {
 			if (tok->type == RE_TC_PERIOD)
 				node.anychar = 1;
 			else
@@ -566,50 +560,48 @@ static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
 
 			node.min = 1;
 			node.max = 1;
-
 			prev = egraph_insert(prev, &node);
 			node = EMPTY_NODE;
 			nmods = 0;
 
+			self->at++;
 			continue;
 		}
 
+		// Do common updates at once
 		switch (tok->type) {
+		case RE_TC_ASTERISK_LAZY:
+		case RE_TC_PLUS_LAZY:
+		case RE_TC_QMARK_LAZY:
+			prev->lazy = 1;
+			/* Fallthrough */
 		case RE_TC_ASTERISK:
-			nmods++;
-			prev->min = 0;
-			prev->max = INT_MAX;
-			break;
-
 		case RE_TC_PLUS:
-			nmods++;
-			prev->min = 1;
-			prev->max = INT_MAX;
-			break;
-
 		case RE_TC_QMARK:
 			nmods++;
-			prev->min = 0;
-			prev->max = 1;
+			/* Fallthrough */
+		case RE_TC_LPAREN:
+		case RE_TC_RPAREN:
+		case RE_TC_BAR:
+			self->at++;
 			break;
+		}
 
+		switch (tok->type) {
 		case RE_TC_ASTERISK_LAZY:
-			nmods++;
-			prev->lazy = 1;
+		case RE_TC_ASTERISK:
 			prev->min = 0;
 			prev->max = INT_MAX;
 			break;
 
 		case RE_TC_PLUS_LAZY:
-			nmods++;
-			prev->lazy = 1;
+		case RE_TC_PLUS:
 			prev->min = 1;
 			prev->max = INT_MAX;
 			break;
 
 		case RE_TC_QMARK_LAZY:
-			nmods++;
-			prev->lazy = 1;
+		case RE_TC_QMARK:
 			prev->min = 0;
 			prev->max = 1;
 			break;
@@ -621,8 +613,8 @@ static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
 			}
 			// If no matching format
 			// Then parse that '{' again but as RE_TT_ORD(as set)
-			if (tok->type == RE_TT_ORD) {
-				i = --self->at;
+			if (tok->type == RE_TC_ORD) {
+				self->at--;
 				break;
 			} else {
 				nmods++;
@@ -633,26 +625,22 @@ static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
 				prev->lazy = 1;
 				self->at++;
 			}
-
-			i = --self->at;
 			break;
 
 		case RE_TC_RBRACE:
-			tok->type = RE_TT_ORD;
-			i = --self->at;
+			tok->type = RE_TC_ORD;
+			self->at--;
 			break;
 
-		case RE_TC_LPAREN:;
-			int grp_end = pairs_search(self->parens, i);
-			prev = egraph_insert(prev, &node);
-			prev = parse_gen_exec_graph(self, prev, i + 1, grp_end);
-			/* Crashes clang!!! */
-			// __builtin_dump_struct(prev, &printf);
+		case RE_TC_LPAREN:
+			// Insert an empty node for group
+			prev = egraph_insert(prev, &EMPTY_NODE);
+			DEBUG("%p\n", (void *)prev->prev);
+			prev = parse_gen_exec_graph(self, prev);
+			break;
 
-			if (prev == NULL)
-				return NULL;
-			assert(grp_end == self->at);
-			i = self->at;
+		case RE_TC_RPAREN:
+			return parent;
 			break;
 
 		case RE_TC_BAR:
@@ -664,8 +652,10 @@ static egraph_T *parse_gen_exec_graph(pstate_T *self, egraph_T *parent,
 			break;
 		}
 
+		if (self->at == self->ntokens)
+			break;
 		// If more than one consecutive pattern modifiers applied
-		// Or if modifier applied to incomplete node(for it nmods=1)
+		// Or if modifier applied to incomplete node
 		if (nmods > 1) {
 			self->error = REGEX_ILLEGAL_CHAR;
 			return NULL;
@@ -681,7 +671,7 @@ egraph_T *re_parse(strbuf const *pattern)
 
 	int error = 0;
 
-	pstate_T *self = pstate_create(pattern);
+	parser_T *self = pstate_create(pattern);
 	if (self == NULL)
 		return NULL;
 
@@ -709,16 +699,10 @@ egraph_T *re_parse(strbuf const *pattern)
 	}
 #endif
 
-	error = parse_gen_parens_span(self);
-	if (error) {
-		self->error = error;
+	if (parse_gen_exec_graph(self, self->exec_graph) == NULL) {
 		goto err_return;
 	}
-
-	if (parse_gen_exec_graph(self, self->exec_graph, 0, self->ntokens) ==
-	    NULL) {
-		goto err_return;
-	}
+	egraph_debug(self->exec_graph, 0);
 
 	pstate_destroy(&self);
 	return ret;

@@ -25,7 +25,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 set(PUBLIC_HEADERS "strlx/strlx.h" "regex/regex.h" "regex/errors.h")
 set(STRLX_SRCS "strlx/str.c" "strlx/strbuf.c" "strlx/common.c")
-set(REGEX_SRCS "regex/dsa.c" "regex/parser.c")
+set(REGEX_SRCS "regex/parser.c")
 
 add_library(strlx ${STRLX_SRCS})
 add_library(regex ${STRLX_SRCS} ${REGEX_SRCS})
